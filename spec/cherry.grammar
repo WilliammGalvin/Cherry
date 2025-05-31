@@ -1,0 +1,80 @@
+Program ::= Scope ;
+
+Scope ::= Stmt* ;
+
+Stmt ::= (
+         DeclareConstVariable
+       | DeclareVariable
+       | AssignVariable 
+       | FunctionCall
+       | IfStatement
+       | WhileLoop
+       ) ";" ;
+
+Comment ::= "//" .* | "/*" .* "*/" ;
+
+DeclareConstVariable ::= ConstKeyword DeclareVariable ;
+DeclareVariable ::= ( DeclareKeyword | TypeKeyword ) Identifier EqualSymbol Value ;
+AssignVariable ::= Identifier EqualSymbol Value ;
+FunctionCall ::= ( BuiltInFunction | Identifier ) "(" ( Value ( "," Value )* )? ")" ;
+
+IfStatement ::= IfKeyword "(" ( Value ( "," Value )* )? ")" "{" Scope "}" ;
+WhileLoop ::= WhileKeyword "(" Value ")" "{" Scope "}" ;
+
+Identifier ::= [a-zA-Z_][a-zA-Z0-9_]* ;
+
+Value ::= LogicalOr ;
+
+LogicalOr ::= LogicalAnd ( Or LogicalAnd )* ;
+LogicalAnd ::= Equality ( And Equality )* ;
+Equality ::= Comparison ( ( DoubleEqual | NotEqual ) Comparison )* ;
+Comparison ::= Term ( ( ">" | ">=" | "<" | "<=" ) Term )* ;
+Term ::= Factor ( ( Add | Minus ) Factor )* ;
+Factor ::= Unary ( ( Multiply | Divide | Mod ) Unary )* ;
+Unary ::= ( BangUnary | Negative )? Primary ;
+
+Primary ::= IntegerLiteral
+          | FloatLiteral
+          | StringLiteral
+          | BooleanLiteral
+          | Identifier
+          | "(" Value ")" ;
+
+IntegerLiteral ::= [0-9]+ ;
+FloatLiteral ::= [0-9]* "." [0-9]+ [fF]?
+               | [0-9]+ [fF]? ;
+StringLiteral ::= "\"" ( [^"\\] | "\\" . )* "\"" ;
+BooleanLiteral ::= TrueKeyword | FalseKeyword ;
+
+BuiltInFunction ::= "print" ;
+
+Equal ::= "=" | EqualKeyword ;
+DoubleEqual ::= "==" | DoubleEqualKeyword ;
+Or ::= "||" | "or" ;
+And ::= "&&" | "and" ;
+Not ::= NotKeyword | "!" ;
+NotEqual ::= Not Equal ;
+Add ::= AddKeyword | "+" ;
+Minus ::= MinusKeyword | "-" ;
+Multiply ::= MultiplyKeyword | "*" ;
+Divide ::= DivideKeyword | "/" ;
+Mod ::= ModKeyword | "%" ;
+Negative ::= NegativeKeyword | "-" ;
+BangUnary ::= NotKeyword | "!" ;
+
+ConstKeyword ::= "const" | "constant" | "final" ;
+DeclareKeyword ::= "variable" | "var" ;
+TypeKeyword ::= "int" | "string" | "float" | "boolean" | "bool" ;
+EqualKeyword ::= "is" ;
+DoubleEqualKeyword ::= "equals" ;
+NotKeyword ::= "not" ;
+AddKeyword ::= "add" | "plus" ;
+MinusKeyword ::= "minus" | "subtract" ;
+MultiplyKeyword ::= "multiply" | "times" ;
+DivideKeyword ::= "divide" ;
+ModKeyword ::= "mod" | "modulus" ;
+NegativeKeyword ::= "negative" ;
+TrueKeyword ::= "true" | "yes" ;
+FalseKeyword ::= "false" | "no" ;
+IfKeyword ::= "if" ;
+WhileKeyword ::= "while" | "loop" ;
