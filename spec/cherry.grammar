@@ -2,80 +2,59 @@ Program ::= Scope ;
 
 Scope ::= Stmt* ;
 
-Stmt ::= (
-         DeclareConstVariable
+Stmt ::= DeclareConstVariable
        | DeclareVariable
-       | AssignVariable 
+       | AssignVariable
+       | ReturnStmt
        | FunctionCall
        | IfStatement
        | WhileLoop
-       ) ";" ;
+       | MetaStmt ;
 
 Comment ::= "//" .* | "/*" .* "*/" ;
 
-DeclareConstVariable ::= ConstKeyword DeclareVariable ;
-DeclareVariable ::= ( DeclareKeyword | TypeKeyword ) Identifier EqualSymbol Value ;
-AssignVariable ::= Identifier EqualSymbol Value ;
-FunctionCall ::= ( BuiltInFunction | Identifier ) "(" ( Value ( "," Value )* )? ")" ;
+VisibilityBlock ::= ( "public" | "private" ) "{" Stmt* "}" ;
+MetaStmt ::= "@" ( PackageStmt | ImportStmt )
 
-IfStatement ::= IfKeyword "(" ( Value ( "," Value )* )? ")" "{" Scope "}" ;
-WhileLoop ::= ( WhileKeyword | LoopKeyword ) "(" Value ")" "{" Scope "}" ;
+PackageStmt ::= "pkg" [a-zA-Z_]+ ;
+ImportStmt ::= "imp as" Identifier "from" StringLiteral ;
+
+FunctionCallStmt ::= FunctionCall ";" ;
+DeclareConstVariable ::= "const" DeclareVariable ;
+DeclareVariable ::= ( "var" | TypeKeyword ) Identifier "=" Value ";" ;
+AssignVariable ::= Identifier "=" Value ";" ;
+ReturnStmt ::= "return" Primary ";" ;
+
+Function ::= "func" Identifier "(" ( Value ( "," Value )* )? ")" ( ":" TypeKeyword )? "{" Scope "}" ;
+IfStatement ::= "if" "(" ( Value ( "," Value )* )? ")" "{" Scope "}" ;
+WhileLoop ::= "while" "(" Value ")" "{" Scope "}" ;
 
 Identifier ::= [a-zA-Z_][a-zA-Z0-9_]* ;
+FunctionCall ::= ( BuiltInFunction | Identifier ) "(" ( Value ( "," Value )* )? ")" ;
 
 Value ::= LogicalOr ;
 
-LogicalOr ::= LogicalAnd ( Or LogicalAnd )* ;
-LogicalAnd ::= Equality ( And Equality )* ;
-Equality ::= Comparison ( ( DoubleEqual | NotEqual ) Comparison )* ;
+LogicalOr ::= LogicalAnd ( "||" LogicalAnd )* ;
+LogicalAnd ::= Equality ( "&&" Equality )* ;
+Equality ::= Comparison ( ( "==" | "!=" ) Comparison )* ;
 Comparison ::= Term ( ( ">" | ">=" | "<" | "<=" ) Term )* ;
-Term ::= Factor ( ( Add | Minus ) Factor )* ;
-Factor ::= Unary ( ( Multiply | Divide | Mod ) Unary )* ;
-Unary ::= ( BangUnary | Negative )? Primary ;
+Term ::= Factor ( ( "+" | "-" ) Factor )* ;
+Factor ::= Unary ( ( "*" | "/" | "%" ) Unary )* ;
+Unary ::= ( "!" | "-" )? Primary ;
 
 Primary ::= IntegerLiteral
           | FloatLiteral
           | StringLiteral
           | BooleanLiteral
           | Identifier
+          | FunctionCall
           | "(" Value ")" ;
 
 IntegerLiteral ::= [0-9]+ ;
 FloatLiteral ::= [0-9]* "." [0-9]+ [fF]?
                | [0-9]+ [fF]? ;
 StringLiteral ::= "\"" ( [^"\\] | "\\" . )* "\"" ;
-BooleanLiteral ::= TrueKeyword | FalseKeyword ;
+BooleanLiteral ::= "true" | "false" ;
 
 BuiltInFunction ::= "print" ;
-
-Equal ::= "=" | EqualKeyword ;
-DoubleEqual ::= "==" | DoubleEqualKeyword ;
-Or ::= "||" | "or" ;
-And ::= "&&" | "and" ;
-Not ::= NotKeyword | "!" ;
-NotEqual ::= Not Equal ;
-Add ::= AddKeyword | "+" ;
-Minus ::= MinusKeyword | "-" ;
-Multiply ::= MultiplyKeyword | "*" ;
-Divide ::= DivideKeyword | "/" ;
-Mod ::= ModKeyword | "%" ;
-Negative ::= NegativeKeyword | "-" ;
-BangUnary ::= NotKeyword | "!" ;
-
-ConstKeyword ::= "const" | "constant" | "final" ;
-DeclareKeyword ::= "variable" | "var" ;
-TypeKeyword ::= "int" | "string" | "float" | "boolean" | "bool" ;
-EqualKeyword ::= "is" ;
-DoubleEqualKeyword ::= "equals" ;
-NotKeyword ::= "not" ;
-AddKeyword ::= "add" | "plus" ;
-MinusKeyword ::= "minus" | "subtract" ;
-MultiplyKeyword ::= "multiply" | "times" ;
-DivideKeyword ::= "divide" ;
-ModKeyword ::= "mod" | "modulus" ;
-NegativeKeyword ::= "negative" ;
-TrueKeyword ::= "true" | "yes" ;
-FalseKeyword ::= "false" | "no" ;
-IfKeyword ::= "if" ;
-WhileKeyword ::= "while" ;
-LoopKeyword ::= "loop" ;
+TypeKeyword ::= "int" | "float" | "string" | "bool" | "void" ;
