@@ -4,7 +4,7 @@
 #include <exception>
 #include <string>
 
-namespace lexer {
+namespace cherry::lexer {
 
     class LexError final : public std::exception {
         std::string message;

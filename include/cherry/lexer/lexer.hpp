@@ -5,7 +5,7 @@
 
 #include <vector>
 
-namespace lexer {
+namespace cherry::lexer {
 
     class Lexer {
         std::vector<Token> tokens;
@@ -23,7 +23,7 @@ namespace lexer {
         bool match_symbol();
         bool match_number_literal();
         bool match_string_literal();
-        bool match_bool_literal();
+        bool match_builtin_function();
         bool match_keyword();
         bool match_identifier();
 

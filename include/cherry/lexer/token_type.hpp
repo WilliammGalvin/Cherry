@@ -1,9 +1,9 @@
-#ifndef TOKEN_HPP
-#define TOKEN_HPP
+#ifndef TOKEN_TYPE_HPP
+#define TOKEN_TYPE_HPP
 
 #include <string>
 
-namespace lexer {
+namespace cherry::lexer {
 
     enum TokenType {
         IDENTIFIER,
@@ -11,27 +11,27 @@ namespace lexer {
         INTEGER_LITERAL,
         FLOAT_LITERAL,
         STRING_LITERAL,
-        BOOLEAN_LITERAL,
+        BOOLEAN_LITERAL_TRUE,
+        BOOLEAN_LITERAL_FALSE,
 
         KEYWORD_CONST,
-        KEYWORD_DECLARE,
-        KEYWORD_TYPE,
-        KEYWORD_EQUAL,
-        KEYWORD_DOUBLE_EQUAL,
-        KEYWORD_NOT,
-        KEYWORD_ADD,
-        KEYWORD_MINUS,
-        KEYWORD_MULTIPLY,
-        KEYWORD_DIVIDE,
-        KEYWORD_MOD,
-        KEYWORD_NEGATIVE,
+        KEYWORD_VAR,
+        KEYWORD_INT,
+        KEYWORD_FLOAT,
+        KEYWORD_STRING,
+        KEYWORD_BOOL,
         KEYWORD_IF,
+        KEYWORD_ELSE,
         KEYWORD_WHILE,
-        KEYWORD_LOOP,
-        KEYWORD_OR,
-        KEYWORD_AND,
+        KEYWORD_FUNC,
+        KEYWORD_RETURN,
+        KEYWORD_VOID,
+
+        BUILTIN_PRINTLN,
+        BUILTIN_PRINT,
 
         SEMI_COLON,
+        COLON,
         COMMA,
         LEFT_PAREN,
         RIGHT_PAREN,
@@ -57,18 +57,8 @@ namespace lexer {
         END_OF_FILE,
     };
 
-    struct Token {
-        TokenType type;
-        std::string value;
-
-        Token(TokenType type, std::string value);
-        explicit Token(TokenType type);
-
-        [[nodiscard]] std::string to_str() const;
-    };
-
     std::string token_type_to_str(TokenType type);
 
 }
 
-#endif //TOKEN_HPP
+#endif //TOKEN_TYPE_HPP

@@ -1,6 +1,6 @@
-#include <iostream>
+#include "cherry/lexer/lexer.hpp"
 
-#include "lexer/include/lexer.hpp"
+#include <iostream>
 
 int main() {
     lexer::Lexer lexer;

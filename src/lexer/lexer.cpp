@@ -1,12 +1,12 @@
-#include "../include/lexer.hpp"
-#include "../include/lex_error.hpp"
+#include "cherry/lexer/lexer.hpp"
+#include "cherry/lexer/lex_error.hpp"
+#include "cherry/lexer/token_type.hpp"
 
 #include <fstream>
 #include <iostream>
 #include <unordered_map>
-#include <unordered_set>
 
-using namespace lexer;
+using namespace cherry::lexer;
 
 static bool is_alpha_or_underscore(const char c) {
     return ( c >= 'a' && c <= 'z' ) || ( c >= 'A' && c <= 'Z' ) || c == '_';
@@ -45,43 +45,58 @@ bool Lexer::match_front(const std::string& str) const {
     return std::string_view(line_source).substr(index).starts_with(str);
 }
 
+bool Lexer::match_builtin_function() {
+    const std::unordered_map<std::string, TokenType> funcs = {
+        { "print", BUILTIN_PRINT },
+        { "println", BUILTIN_PRINTLN },
+    };
+
+    std::string longest;
+    for (const auto& [key, _] : funcs) {
+        if (match_front(key) && key.length() > longest.length()) {
+            if (
+                key.length() - longest.length() == 0 ||
+                !is_alpha_or_underscore(peek(key.length() + 1))
+            ) {
+                longest = key;
+            }
+        }
+    }
+
+    if (longest.empty()) {
+        return false;
+    }
+
+    const auto type = funcs.at(longest);
+    tokens.emplace_back(type, longest);
+    advance(longest.length());
+    return true;
+}
+
 bool Lexer::match_keyword() {
     if (!is_alpha_or_underscore(peek()))
         return false;
 
     const std::unordered_map<std::string, TokenType> keywords = {
         { "const", KEYWORD_CONST },
-        { "constant", KEYWORD_CONST },
-        { "final", KEYWORD_CONST },
-        { "variable", KEYWORD_DECLARE },
-        { "var", KEYWORD_DECLARE },
-        { "int", KEYWORD_TYPE },
-        { "string", KEYWORD_TYPE },
-        { "float", KEYWORD_TYPE },
-        { "boolean", KEYWORD_TYPE },
-        { "bool", KEYWORD_TYPE },
-        { "is", KEYWORD_EQUAL },
-        { "equals", KEYWORD_DOUBLE_EQUAL },
-        { "not", KEYWORD_NOT },
-        { "add", KEYWORD_ADD },
-        { "plus", KEYWORD_ADD },
-        { "minus", KEYWORD_MINUS },
-        { "subtract", KEYWORD_MINUS },
-        { "multiply", KEYWORD_MULTIPLY },
-        { "times", KEYWORD_MULTIPLY },
-        { "divide", KEYWORD_DIVIDE },
-        { "mod", KEYWORD_MOD },
-        { "modulus", KEYWORD_MOD },
-        { "negative", KEYWORD_NEGATIVE },
+        { "var", KEYWORD_VAR },
+        { "int", KEYWORD_INT },
+        { "string", KEYWORD_STRING },
+        { "float", KEYWORD_FLOAT },
+        { "bool", KEYWORD_BOOL },
         { "if", KEYWORD_IF },
+        { "else", KEYWORD_ELSE },
         { "while", KEYWORD_WHILE },
-        { "loop", KEYWORD_LOOP },
-        { "or", KEYWORD_OR },
-        { "and", KEYWORD_AND },
+        { "func", KEYWORD_FUNC },
+        { "return", KEYWORD_RETURN },
+        { "void", KEYWORD_VOID },
+
+        { "true", BOOLEAN_LITERAL_TRUE },
+        { "false", BOOLEAN_LITERAL_FALSE },
     };
 
     std::string longest;
-    for (const auto& [key, _] : keywords) {
+    for (const auto& [key, value] : keywords) {
         if (match_front(key) && key.length() > longest.length()) {
             longest = key;
         }
@@ -99,6 +114,7 @@ bool Lexer::match_keyword() {
 bool Lexer::match_symbol() {
     const std::vector<std::pair<std::string, TokenType>> symbols = {
         {";", SEMI_COLON},
+        {":", COLON},
         {",", COMMA},
         {"(", LEFT_PAREN},
         {")", RIGHT_PAREN},
@@ -192,32 +208,16 @@ bool Lexer::match_string_literal() {
         return false;
     }
 
-    buffer += consume();
+    advance(1);
 
     while (!is_empty()) {
         if (peek() == '"') {
-            buffer += consume();
+            advance(1);
             tokens.emplace_back(STRING_LITERAL, buffer);
             return true;
         }
 
         buffer += consume();
-    }
-
-    return false;
-}
-
-bool Lexer::match_bool_literal() {
-    const std::unordered_set<std::string> bool_literals = {
-        "true", "false", "yes", "no"
-    };
-
-    for (const auto& literal : bool_literals) {
-        if (match_front(literal)) {
-            advance(literal.length());
-            tokens.emplace_back(BOOLEAN_LITERAL, literal);
-            return true;
-        }
     }
 
     return false;
@@ -254,10 +254,10 @@ void Lexer::lex_line() {
 
         if (
                match_symbol()
+            || match_builtin_function()
             || match_keyword()
             || match_number_literal()
             || match_string_literal()
-            || match_bool_literal()
             || match_identifier()
         ) continue;
 
