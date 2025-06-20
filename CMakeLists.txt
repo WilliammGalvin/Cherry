@@ -45,6 +45,12 @@ add_executable(Cherry main.cpp
         src/parser/parse_error.cpp
         src/parser/parser.cpp
         include/cherry/ast/expr/function_call.hpp
+        include/cherry/ast/stmt/scope_blocks.hpp
+        src/ast/ast_node.cpp
+        include/cherry/semantic/symbol_table.hpp
+        include/cherry/semantic/semantic_analyzer.hpp
+        src/semantic/symbol_table.cpp
+        src/semantic/semantic_analyzer.cpp
 )
 
 # Link lexer library + LLVM to Cherry

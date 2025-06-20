@@ -19,6 +19,18 @@ namespace cherry::ast {
 
         BinaryExpr(const BinaryOp op, std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
             : op(op), left(std::move(left)), right(std::move(right)) {}
+
+        void print(std::ostream& os, int indent) const override {
+            os << std::string(indent, ' ') << "BinaryExpr: " << static_cast<int>(op) << "\n";
+            if (left) {
+                os << std::string(indent + 2, ' ') << "Left:\n";
+                left->print(os, indent + 4);
+            }
+            if (right) {
+                os << std::string(indent + 2, ' ') << "Right:\n";
+                right->print(os, indent + 4);
+            }
+        }
     };
 
 }

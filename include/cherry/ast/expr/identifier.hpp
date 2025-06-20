@@ -10,6 +10,12 @@ namespace cherry::ast {
         std::string name;
 
         explicit IdentifierExpr(std::string name) : name(std::move(name)) {}
+
+        void print(std::ostream& os, int indent) const override {
+            os << "IdentifierExpr: " << name << "\n";
+            print_indent(os, indent + 1);
+            os << "Name: " << name << "\n";
+        }
     };
 
 }

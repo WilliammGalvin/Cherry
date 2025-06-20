@@ -5,6 +5,7 @@
 
 #include "cherry/ast/expr/binary_op.hpp"
 #include "cherry/ast/expr/function_call.hpp"
+#include "cherry/ast/expr/literal.hpp"
 #include "cherry/ast/expr/unary_op.hpp"
 #include "cherry/parser/parse_error.hpp"
 
@@ -17,7 +18,6 @@ static const std::unordered_map<std::string, cherry::lexer::TokenType> builtin_f
 
 static std::string check_type_keyword(const cherry::lexer::TokenType type) {
     switch (type) {
-        case cherry::lexer::KEYWORD_VAR: return "var";
         case cherry::lexer::KEYWORD_INT: return "int";
         case cherry::lexer::KEYWORD_FLOAT: return "float";
         case cherry::lexer::KEYWORD_STRING: return "string";
@@ -64,6 +64,21 @@ const cherry::lexer::Token& Parser::expect(const lexer::TokenType type, const st
     }
 
     return consume();
+}
+
+std::vector<std::unique_ptr<cherry::ast::Statement>> Parser::parse_body_block() {
+    std::vector<std::unique_ptr<ast::Statement>> body;
+    while (!is_at_end() && peek().type != lexer::RIGHT_BRACE) {
+        if (peek().type == lexer::LINE_END) {
+            consume();
+            continue;
+        }
+
+        body.push_back(std::move(parse_stmt()));
+    }
+
+    expect(lexer::RIGHT_BRACE, "Expected '}' to close body block.");
+    return body;
 }
 
 std::vector<std::unique_ptr<cherry::ast::Expr> > Parser::parse_expr_list() {
@@ -114,12 +129,9 @@ std::unique_ptr<cherry::ast::Expr> Parser::parse_function_expr() {
     }
 
     expect(lexer::LEFT_PAREN, "Expected '(' after function name.");
-    const auto args = parse_expr_list();
+    auto args = parse_expr_list();
     expect(lexer::RIGHT_PAREN, "Expected ')' after function arguments.");
-
-    return std::make_unique<ast::FunctionCallExpr>(
-        ast::FunctionCallExpr(callee, args)
-    );
+    return std::make_unique<ast::FunctionCallExpr>(callee, std::move(args));
 }
 
 std::unique_ptr<cherry::ast::Expr> Parser::parse_logical_or() {
@@ -321,13 +333,14 @@ std::unique_ptr<cherry::ast::Declaration> Parser::parse_declaration() {
     }
 
     advance();
+    auto identifier_tok = expect(lexer::IDENTIFIER, "Expected identifier after type keyword.");
     expect(lexer::EQUAL, "Expected '=' after declaration type.");
     auto value = parse_logical_or();
     expect(lexer::SEMI_COLON, "Expected ';' after declaration type.");
 
-    return std::make_unique<ast::Declaration>(ast::Declaration(
-        is_const, type, std::move(value), type
-    ));
+    return std::make_unique<ast::Declaration>(
+        is_const, identifier_tok.value, std::move(value), type
+    );
 }
 
 std::unique_ptr<cherry::ast::Assignment> Parser::parse_assignment() {
@@ -336,9 +349,9 @@ std::unique_ptr<cherry::ast::Assignment> Parser::parse_assignment() {
     auto value = parse_logical_or();
     expect(lexer::SEMI_COLON, "Expected ';' after assignment.");
 
-    return std::make_unique<ast::Assignment>(ast::Assignment(
+    return std::make_unique<ast::Assignment>(
         std::move(identifier), std::move(value)
-    ));
+    );
 }
 
 std::unique_ptr<cherry::ast::FunctionDecl> Parser::parse_function_decl() {
@@ -374,15 +387,11 @@ std::unique_ptr<cherry::ast::FunctionDecl> Parser::parse_function_decl() {
     }
 
     expect(lexer::LEFT_BRACE, "Expected '{' to start function body.");
+    auto body = parse_body_block();
 
-    std::vector<std::unique_ptr<ast::Statement>> body;
-    while (!is_at_end() && match(lexer::RIGHT_BRACE)) {
-        body.emplace_back(std::move(parse_stmt()));
-    }
-
-    return std::make_unique<ast::FunctionDecl>(ast::FunctionDecl(
+    return std::make_unique<ast::FunctionDecl>(
         std::move(identifier), std::move(params), return_type, std::move(body)
-    ));
+    );
 }
 
 std::unique_ptr<cherry::ast::IfStatement> Parser::parse_if_statement() {
@@ -391,22 +400,15 @@ std::unique_ptr<cherry::ast::IfStatement> Parser::parse_if_statement() {
     auto condition = parse_logical_or();
     expect(lexer::RIGHT_PAREN, "Expected ')' after condition expression.");
     expect(lexer::LEFT_BRACE, "Expected '{' to start if body.");
-
-    std::vector<std::unique_ptr<ast::Statement>> then;
-    while (!is_at_end() && match(lexer::RIGHT_BRACE)) {
-        then.push_back(std::move(parse_stmt()));
-    }
+    auto then = parse_body_block();
 
     std::vector<std::unique_ptr<ast::Statement>> else_body;
     if (match(lexer::KEYWORD_ELSE)) {
         expect(lexer::LEFT_BRACE, "Expected '{' to start else body.");
-
-        while (!is_at_end() && match(lexer::RIGHT_BRACE)) {
-            else_body.push_back(std::move(parse_stmt()));
-        }
+        else_body = parse_body_block();
     }
 
-    return std::make_unique<ast::IfStatement>(condition, std::move(then), std::move(else_body));
+    return std::make_unique<ast::IfStatement>(std::move(condition), std::move(then), std::move(else_body));
 }
 
 std::unique_ptr<cherry::ast::WhileStatement> Parser::parse_while_statement() {
@@ -415,13 +417,9 @@ std::unique_ptr<cherry::ast::WhileStatement> Parser::parse_while_statement() {
     auto condition = parse_logical_or();
     expect(lexer::RIGHT_PAREN, "Expected ')' after condition expression.");
     expect(lexer::LEFT_BRACE, "Expected '{' to start while body.");
+    auto body = parse_body_block();
 
-    std::vector<std::unique_ptr<ast::Statement>> body;
-    while (!is_at_end() && match(lexer::RIGHT_BRACE)) {
-        body.push_back(std::move(parse_stmt()));
-    }
-
-    return std::make_unique<ast::WhileStatement>(condition, body);
+    return std::make_unique<ast::WhileStatement>(std::move(condition), std::move(body));
 }
 
 std::unique_ptr<cherry::ast::ReturnStatement> Parser::parse_return_statement() {
@@ -429,7 +427,7 @@ std::unique_ptr<cherry::ast::ReturnStatement> Parser::parse_return_statement() {
     auto value = parse_primary();
     expect(lexer::SEMI_COLON, "Expected ';' after return value.");
 
-    return std::make_unique<ast::ReturnStatement>(value);
+    return std::make_unique<ast::ReturnStatement>(std::move(value));
 }
 
 std::unique_ptr<cherry::ast::FunctionCallStatement> Parser::parse_function_call_statement() {
@@ -455,13 +453,26 @@ std::unique_ptr<cherry::ast::FunctionCallStatement> Parser::parse_function_call_
     expect(lexer::RIGHT_PAREN, "Expected ')' after function arguments.");
 
     return std::make_unique<ast::FunctionCallStatement>(
-        ast::FunctionCallStatement(callee, std::move(args))
+        callee, std::move(args)
     );
+}
+
+std::unique_ptr<cherry::ast::PublicBlock> Parser::parse_public_scope_statement() {
+    expect(lexer::KEYWORD_PUBLIC, "Expected 'public' keyword.");
+    expect(lexer::LEFT_BRACE, "Expected '{' to start public scope body.");
+    auto body = parse_body_block();
+    return std::make_unique<ast::PublicBlock>(std::move(body));
+}
+
+std::unique_ptr<cherry::ast::PrivateBlock> Parser::parse_private_scope_statement() {
+    expect(lexer::KEYWORD_PRIVATE, "Expected 'private' keyword.");
+    expect(lexer::LEFT_BRACE, "Expected '{' to start private scope body.");
+    auto body = parse_body_block();
+    return std::make_unique<ast::PrivateBlock>(std::move(body));
 }
 
 std::unique_ptr<cherry::ast::Statement> Parser::parse_stmt() {
     if (
-        peek().type == lexer::KEYWORD_VAR ||
         peek().type == lexer::KEYWORD_CONST ||
         peek().type == lexer::KEYWORD_INT ||
         peek().type == lexer::KEYWORD_FLOAT ||
@@ -501,6 +512,20 @@ std::unique_ptr<cherry::ast::Statement> Parser::parse_stmt() {
         return parse_function_call_statement();
     }
 
+    if (
+        peek().type == lexer::KEYWORD_PUBLIC &&
+        peek(1).type == lexer::LEFT_BRACE
+    ) {
+        return parse_public_scope_statement();
+    }
+
+    if (
+        peek().type == lexer::KEYWORD_PRIVATE &&
+        peek(1).type == lexer::LEFT_BRACE
+    ) {
+        return parse_private_scope_statement();
+    }
+
     throw ParseError("Failed to parse next statement.");
 }
 
@@ -510,17 +535,15 @@ Parser::Parser(std::vector<lexer::Token> tokens)
 std::unique_ptr<cherry::ast::Program> Parser::parse_program() {
     std::vector<std::unique_ptr<ast::Statement>> stmts;
 
-    while (!is_at_end()) {
+    while (!is_at_end() && peek().type != lexer::END_OF_FILE) {
         if (peek().type == lexer::LINE_END) {
             consume();
             continue;
         }
 
-        const auto stmt = parse_stmt();
+        auto stmt = parse_stmt();
         stmts.push_back(std::move(stmt));
     }
 
-    return std::make_unique<ast::Program>(
-        ast::Program(std::move(stmts))
-    );
+    return std::make_unique<ast::Program>(std::move(stmts));
 }

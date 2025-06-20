@@ -3,8 +3,8 @@
 using namespace cherry::parser;
 
 ParseError::ParseError(std::string msg)
-    : message(std::move(msg)) {}
+    : message("=== 🍒 Cherry Parse Error ===\n" + std::move(msg)) {}
 
 const char* ParseError::what() const noexcept {
-    return ("=== 🍒 Cherry Parse Error ===\n" + message).c_str();
+    return message.c_str();
 }

@@ -12,6 +12,17 @@ namespace cherry::ast {
         std::unique_ptr<Expr> value;
 
         explicit ReturnStatement(std::unique_ptr<Expr> value) : value(std::move(value)) {}
+
+        void print(std::ostream& os, int indent) const override {
+            os << "ReturnStatement:\n";
+            print_indent(os, indent + 1);
+            os << "Value:\n";
+            if (value) {
+                value->print(os, indent + 2);
+            } else {
+                os << "null\n";
+            }
+        }
     };
 
 }
