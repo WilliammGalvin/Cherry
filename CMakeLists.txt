@@ -1,15 +1,17 @@
-cmake_minimum_required(VERSION 3.30)
+cmake_minimum_required(VERSION 3.28)
 project(Cherry)
 
 set(CMAKE_CXX_STANDARD 20)
 
 # === LLVM ===
 find_package(LLVM REQUIRED CONFIG)
+llvm_map_components_to_libnames(llvm_libs support core irreader)
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 
-llvm_map_components_to_libnames(llvm_libs support core irreader)
+include_directories(${LLVM_INCLUDE_DIRS})
+add_definitions(${LLVM_DEFINITIONS})
 
 # === Lexer Library ===
 add_library(cherry_lexer
@@ -18,40 +20,60 @@ add_library(cherry_lexer
         src/lexer/token.cpp
         src/lexer/token_type.cpp
 )
-
-# Public headers are in include/
 target_include_directories(cherry_lexer PUBLIC include)
 
-# === Main Executable ===
-add_executable(Cherry main.cpp
-        include/cherry/parser/parser.hpp
-        include/cherry/parser/parse_error.hpp
-        include/cherry/ast/ast_node.hpp
-        include/cherry/ast/program.hpp
-        include/cherry/ast/stmt/statement.hpp
-        include/cherry/ast/expr/expression.hpp
-        include/cherry/ast/stmt/declaration.hpp
-        include/cherry/ast/stmt/assignment.hpp
-        include/cherry/ast/stmt/if_statement.hpp
-        include/cherry/ast/stmt/while_loop.hpp
-        include/cherry/ast/stmt/function_call.hpp
-        include/cherry/ast/stmt/function_decl.hpp
-        include/cherry/ast/stmt/return_statement.hpp
-        include/cherry/ast/expr/literal.hpp
-        include/cherry/ast/expr/identifier.hpp
-        include/cherry/ast/expr/binary_op.hpp
-        include/cherry/ast/expr/unary_op.hpp
-        include/cherry/ast/expr/grouping.hpp
-        src/parser/parse_error.cpp
+# === AST Library (Header-Only) ===
+add_library(cherry_ast INTERFACE)
+target_include_directories(cherry_ast INTERFACE include)
+
+# === Parser Library ===
+add_library(cherry_parser
         src/parser/parser.cpp
-        include/cherry/ast/expr/function_call.hpp
-        include/cherry/ast/stmt/scope_blocks.hpp
-        src/ast/ast_node.cpp
-        include/cherry/semantic/symbol_table.hpp
-        include/cherry/semantic/semantic_analyzer.hpp
+        src/parser/parse_error.cpp
+)
+target_include_directories(cherry_parser PUBLIC include)
+target_link_libraries(cherry_parser PUBLIC cherry_lexer cherry_ast)
+
+# === Semantic Library ===
+add_library(cherry_semantic
         src/semantic/symbol_table.cpp
         src/semantic/semantic_analyzer.cpp
+        src/semantic/semantic_error.cpp
+)
+target_include_directories(cherry_semantic PUBLIC include)
+target_link_libraries(cherry_semantic PUBLIC cherry_ast cherry_parser)
+
+# === Main Executable ===
+add_executable(Cherry
+        main.cpp
+        src/ir/ir_builder.cpp
+
+        include/cherry/semantic/semantic_error.hpp
+        include/cherry/ast/types.hpp
+        include/cherry/ast/expr/grouping.hpp
+        include/cherry/printer/ast_printer.hpp
+
+        include/cherry/ir/ir_values.hpp
+        include/cherry/ir/ir_builder.hpp
+        include/cherry/ir/ir_function_decl.hpp
+        include/cherry/ir/ir_node.hpp
+        include/cherry/ir/ir_program.hpp
+        include/cherry/ir/ir_variable_assignment.hpp
+        include/cherry/ir/ir_variable_decl.hpp
+        include/cherry/printer/ir_printer.hpp
+        include/cherry/llvm/llvm_code_gen.hpp
+        src/llvm/llvm_code_gen.cpp
+        include/cherry/printer/llvm_printer.hpp
+        include/cherry/llvm/llvm_runner.hpp
+        include/cherry/ir/ir_return.hpp
 )
 
-# Link lexer library + LLVM to Cherry
-target_link_libraries(Cherry PRIVATE cherry_lexer ${llvm_libs})
+target_include_directories(Cherry PUBLIC include)
+target_link_libraries(Cherry
+        PRIVATE
+        cherry_lexer
+        cherry_parser
+        cherry_ast
+        cherry_semantic
+        ${llvm_libs}
+)

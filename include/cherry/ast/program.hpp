@@ -12,19 +12,6 @@ namespace cherry::ast {
         std::vector<std::unique_ptr<Statement>> stmts;
 
         explicit Program(std::vector<std::unique_ptr<Statement>>&& stmts) : stmts(std::move(stmts)) {}
-
-        void print(std::ostream& os, int indent = 0) const override {
-            os << "Program:\n";
-            print_indent(os, indent + 1);
-            os << "Statements:\n";
-            for (const auto& stmt : stmts) {
-                if (stmt) {
-                    stmt->print(os, indent + 2);
-                } else {
-                    os << "null\n";
-                }
-            }
-        }
     };
 
 }

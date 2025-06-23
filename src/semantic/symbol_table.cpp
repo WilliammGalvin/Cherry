@@ -16,13 +16,8 @@ void SymbolTable::exit_scope() {
     }
 }
 
-bool SymbolTable::declare(const std::string& name, SymbolType type) {
-    if (is_declared(name)) {
-        return false;
-    }
-
+void SymbolTable::declare(const std::string& name, const SymbolType type) {
     scopes.back()[name] = type;
-    return true;
 }
 
 bool SymbolTable::is_declared(const std::string& name) const {

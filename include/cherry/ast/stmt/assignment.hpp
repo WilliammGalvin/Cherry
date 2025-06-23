@@ -14,24 +14,6 @@ namespace cherry::ast {
 
         Assignment(std::unique_ptr<IdentifierExpr> target, std::unique_ptr<Expr> value)
             : target(std::move(target)), value(std::move(value)) {}
-
-        void print(std::ostream& os, int indent) const override {
-            os << "Assignment:\n";
-            print_indent(os, indent + 1);
-            os << "Target:\n";
-            if (target) {
-                target->print(os, indent + 2);
-            } else {
-                os << "null\n";
-            }
-            print_indent(os, indent + 1);
-            os << "Value:\n";
-            if (value) {
-                value->print(os, indent + 2);
-            } else {
-                os << "null\n";
-            }
-        }
     };
 
 }

@@ -20,7 +20,7 @@ namespace cherry::semantic {
 
         void enter_scope();
         void exit_scope();
-        [[nodiscard]] bool declare(const std::string& name, SymbolType type);
+        void declare(const std::string& name, SymbolType type);
         [[nodiscard]] bool is_declared(const std::string& name) const;
         [[nodiscard]] const SymbolType* get_type(const std::string& name) const;
     };

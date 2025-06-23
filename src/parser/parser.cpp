@@ -1,7 +1,6 @@
 #include "cherry/parser/parser.hpp"
 
 #include <unordered_map>
-#include <unordered_set>
 
 #include "cherry/ast/expr/binary_op.hpp"
 #include "cherry/ast/expr/function_call.hpp"
@@ -16,13 +15,13 @@ static const std::unordered_map<std::string, cherry::lexer::TokenType> builtin_f
     { "println", cherry::lexer::BUILTIN_PRINTLN },
 };
 
-static std::string check_type_keyword(const cherry::lexer::TokenType type) {
+static cherry::ast::Type check_type_keyword(const cherry::lexer::TokenType type) {
     switch (type) {
-        case cherry::lexer::KEYWORD_INT: return "int";
-        case cherry::lexer::KEYWORD_FLOAT: return "float";
-        case cherry::lexer::KEYWORD_STRING: return "string";
-        case cherry::lexer::KEYWORD_BOOL: return "bool";
-        default: return "";
+        case cherry::lexer::KEYWORD_INT: return cherry::ast::INT;
+        case cherry::lexer::KEYWORD_FLOAT: return cherry::ast::FLOAT;
+        case cherry::lexer::KEYWORD_STRING: return cherry::ast::STRING;
+        case cherry::lexer::KEYWORD_BOOL: return cherry::ast::BOOL;
+        default: return cherry::ast::NONE;
     }
 }
 
@@ -326,9 +325,9 @@ std::unique_ptr<cherry::ast::Expr> Parser::parse_primary() {
 
 std::unique_ptr<cherry::ast::Declaration> Parser::parse_declaration() {
     const bool is_const = match(lexer::KEYWORD_CONST);
-    const std::string type = check_type_keyword(peek().type);
+    const ast::Type type = check_type_keyword(peek().type);
 
-    if (type.empty()) {
+    if (type == ast::NONE) {
         throw ParseError("Expected a type keyword (var, int, float, string, bool) for declaration.");
     }
 
@@ -361,14 +360,15 @@ std::unique_ptr<cherry::ast::FunctionDecl> Parser::parse_function_decl() {
 
     std::vector<ast::Param> params;
     while (!is_at_end() && !match(lexer::RIGHT_PAREN)) {
-        const auto type = check_type_keyword(peek().type);
+        const ast::Type type = check_type_keyword(peek().type);
 
-        if (type.empty()) {
+        if (type == ast::NONE) {
             throw ParseError("Expected a type keyword (int, float, string, bool) for parameter.");
         }
 
         advance();
-        expect(lexer::IDENTIFIER, "Expected parameter name after type keyword.");
+        const auto name_tok = expect(lexer::IDENTIFIER, "Expected parameter name after type keyword.");
+        params.emplace_back(type, name_tok.value);
 
         if (peek().type != lexer::RIGHT_PAREN) {
             expect(lexer::COMMA, "Expected ',' after parameter name.");
@@ -376,16 +376,17 @@ std::unique_ptr<cherry::ast::FunctionDecl> Parser::parse_function_decl() {
     }
 
     expect(lexer::COLON, "Expected a return type for function declaration.");
-    std::string return_type = check_type_keyword(peek().type);
+    ast::Type return_type = check_type_keyword(peek().type);
 
-    if (return_type.empty() && match(lexer::KEYWORD_VOID)) {
-        return_type = "void";
+    if (return_type == ast::NONE && match(lexer::KEYWORD_VOID)) {
+        return_type = ast::VOID;
     }
 
-    if (return_type.empty()) {
+    if (return_type == ast::NONE) {
         throw ParseError("Expected a return type for function declaration.");
     }
 
+    advance();
     expect(lexer::LEFT_BRACE, "Expected '{' to start function body.");
     auto body = parse_body_block();
 
@@ -424,7 +425,7 @@ std::unique_ptr<cherry::ast::WhileStatement> Parser::parse_while_statement() {
 
 std::unique_ptr<cherry::ast::ReturnStatement> Parser::parse_return_statement() {
     expect(lexer::KEYWORD_RETURN, "Expected 'return' keyword for condition.");
-    auto value = parse_primary();
+    auto value = parse_logical_or();
     expect(lexer::SEMI_COLON, "Expected ';' after return value.");
 
     return std::make_unique<ast::ReturnStatement>(std::move(value));
