@@ -5,6 +5,7 @@
 #include <typeindex>
 #include <unordered_map>
 #include <functional>
+#include <variant>
 
 #include <cherry/ast/program.hpp>
 #include <cherry/ast/expr/binary_op.hpp>
@@ -21,6 +22,9 @@
 #include <cherry/ast/stmt/while_loop.hpp>
 #include <cherry/ast/expr/grouping.hpp>
 
+#include "cherry/ast/expr/unary_op.hpp"
+
+#undef DISPATCHER_ENTRY
 #define DISPATCHER_ENTRY(TYPE, FUNC) \
     { typeid(TYPE), [](ast::ASTNode* node, std::ostream& os, size_t indent) { \
         FUNC(os, dynamic_cast<TYPE*>(node), indent); \
@@ -28,167 +32,165 @@
 
 namespace cherry::ast::printer {
 
-    inline void print_indent(std::ostream& os, size_t indent) {
-        for (size_t i = 0; i < indent; ++i) os << "  ";
+inline void print_indent(std::ostream& os, size_t indent) {
+    for (size_t i = 0; i < indent; ++i)
+        os << "  ";
+}
+
+inline void print_expression(std::ostream& os, Expr* expr, size_t indent = 0);
+inline void print_stmt(std::ostream& os, Statement* stmt, size_t indent = 0);
+
+inline void print_unary_expr(std::ostream& os, UnaryExpr* expr, size_t indent) {
+    print_indent(os, indent);
+    os << "UnaryExpr (" << unary_op_to_str(expr->op) << ")\n";
+    print_expression(os, expr->operand.get(), indent + 1);
+}
+
+inline void print_binary_expr(std::ostream& os, BinaryExpr* bin_expr, size_t indent) {
+    print_indent(os, indent);
+    os << "BinaryExpr (" << binary_op_to_str(bin_expr->op) << ")\n";
+    print_expression(os, bin_expr->left.get(), indent + 1);
+    print_expression(os, bin_expr->right.get(), indent + 1);
+}
+
+inline void print_function_call_expr(std::ostream& os, FunctionCallExpr* func_call, size_t indent) {
+    print_indent(os, indent);
+    os << "FunctionCallExpr: " << func_call->callee << "\n";
+    for (const auto& arg : func_call->args) {
+        print_expression(os, arg.get(), indent + 1);
     }
+}
 
-    inline void print_expression(std::ostream& os, Expr* expr, size_t indent = 0);
-    inline void print_stmt(std::ostream& os, Statement* stmt, size_t indent = 0);
+inline void print_grouping(std::ostream& os, GroupingExpr* grouping, size_t indent) {
+    print_indent(os, indent);
+    os << "GroupingExpr\n";
+    print_expression(os, grouping->inner.get(), indent + 1);
+}
 
-    inline void print_binary_expr(std::ostream& os, BinaryExpr* bin_expr, size_t indent) {
-        print_indent(os, indent); os << "BinaryExpr (" << binary_op_to_str(bin_expr->op) << ")\n";
-        print_expression(os, bin_expr->left.get(), indent + 1);
-        print_expression(os, bin_expr->right.get(), indent + 1);
+inline void print_identifier(std::ostream& os, IdentifierExpr* identifier, size_t indent) {
+    print_indent(os, indent);
+    os << "IdentifierExpr: " << identifier->name << "\n";
+}
+
+inline void print_int_literal(std::ostream& os, IntegerLiteral* val, size_t indent) {
+    print_indent(os, indent);
+    os << "IntegerLiteral: " << std::get<long long>(val->value) << "\n";
+}
+
+inline void print_float_literal(std::ostream& os, FloatLiteral* val, size_t indent) {
+    print_indent(os, indent);
+    os << "FloatLiteral: " << std::get<double>(val->value) << "\n";
+}
+
+inline void print_bool_literal(std::ostream& os, BooleanLiteral* val, size_t indent) {
+    print_indent(os, indent);
+    os << "BooleanLiteral: " << (std::get<bool>(val->value) ? "true" : "false") << "\n";
+}
+
+inline void print_string_literal(std::ostream& os, StringLiteral* val, size_t indent) {
+    print_indent(os, indent);
+    os << "StringLiteral: \"" << std::get<std::string>(val->value) << "\"\n";
+}
+
+inline void print_assignment(std::ostream& os, Assignment* assignment, size_t indent) {
+    print_indent(os, indent);
+    os << "Assignment:\n";
+    print_indent(os, indent + 1);
+    os << "Target: " << assignment->target->name << "\n";
+    print_indent(os, indent + 1);
+    os << "Value:\n";
+    print_expression(os, assignment->value.get(), indent + 2);
+}
+
+inline void print_declaration(std::ostream& os, Declaration* decl, size_t indent) {
+    print_indent(os, indent);
+    os << (decl->is_const ? "Const Var Declaration:\n" : "Var Declaration:\n");
+    print_indent(os, indent + 1);
+    os << "Name: " << decl->name << "\n";
+    print_indent(os, indent + 1);
+    os << "Type: " << var_type_to_str(decl->explicit_type) << "\n";
+    print_indent(os, indent + 1);
+    os << "Initializer:\n";
+    print_expression(os, decl->initializer.get(), indent + 2);
+}
+
+inline void print_function_call_stmt(std::ostream& os, FunctionCallStatement* stmt, size_t indent) {
+    print_indent(os, indent);
+    os << "FunctionCallStatement: " << stmt->callee << "\n";
+    for (const auto& arg : stmt->args) {
+        print_expression(os, arg.get(), indent + 1);
     }
+}
 
-    inline void print_function_call_expr(std::ostream& os, FunctionCallExpr* func_call, size_t indent) {
-        print_indent(os, indent); os << "FunctionCallExpr: " << func_call->callee << "\n";
-        for (const auto& arg : func_call->args) print_expression(os, arg.get(), indent + 1);
-    }
-
-    inline void print_grouping(std::ostream& os, GroupingExpr* grouping, size_t indent) {
-        print_indent(os, indent); os << "GroupingExpr\n";
-        print_expression(os, grouping->inner.get(), indent + 1);
-    }
-
-    inline void print_identifier(std::ostream& os, IdentifierExpr* identifier, size_t indent) {
-        print_indent(os, indent); os << "IdentifierExpr: " << identifier->name << "\n";
-    }
-
-    inline void print_int_literal(std::ostream& os, IntegerLiteral* val, size_t indent) {
-        print_indent(os, indent); os << "IntegerLiteral: " << val->value << "\n";
-    }
-
-    inline void print_float_literal(std::ostream& os, FloatLiteral* val, size_t indent) {
-        print_indent(os, indent); os << "FloatLiteral: " << val->value << "\n";
-    }
-
-    inline void print_bool_literal(std::ostream& os, BooleanLiteral* val, size_t indent) {
-        print_indent(os, indent); os << "BooleanLiteral: " << val->value << "\n";
-    }
-
-    inline void print_string_literal(std::ostream& os, StringLiteral* val, size_t indent) {
-        print_indent(os, indent); os << "StringLiteral: \"" << val->value << "\"\n";
-    }
-
-    inline void print_assignment(std::ostream& os, Assignment* assignment, size_t indent) {
-        print_indent(os, indent);
-        os << "Assignment:\n";
-        print_indent(os, indent + 1);
-        os << "Target: " << assignment->target->name << "\n";
-        print_indent(os, indent + 1);
-        os << "Value:\n";
-        print_expression(os, assignment->value.get(), indent + 2);
-    }
-
-    inline void print_declaration(std::ostream& os, Declaration* decl, size_t indent) {
-        print_indent(os, indent);
-
-        if (decl->is_const) {
-            os << "Const Var Declaration:\n";
-        } else {
-            os << "Var Declaration:\n";
-        }
-
-        print_indent(os, indent + 1);
-        os << "Name: " << decl->name << "\n";
-        print_indent(os, indent + 1);
-        os << "Type: " << var_type_to_str(decl->explicit_type) << "\n";
-        print_indent(os, indent + 1);
-        os << "Initalizer:\n";
-        print_expression(os, decl->initializer.get(), indent + 2);
-    }
-
-    inline void print_function_call_stmt(std::ostream& os, FunctionCallStatement* stmt, size_t indent) {
-        print_indent(os, indent);
-        os << "FunctionCallStatement: " << stmt->callee << "\n";
-
-        for (const auto& arg : stmt->args) {
-            print_expression(os, arg.get(), indent + 1);
-        }
-    }
-
-    inline void print_function_decl(std::ostream& os, FunctionDecl* decl, size_t indent) {
-        print_indent(os, indent);
-        os << "FunctionDecl:\n";
-        print_indent(os, indent + 1);
-        os << "Name: " << decl->identifier->name << "\n";
-
-        print_indent(os, indent + 1);
-        os << "Params:\n";
-
+inline void print_function_decl(std::ostream& os, FunctionDecl* decl, size_t indent) {
+    print_indent(os, indent);
+    os << "FunctionDecl:\n";
+    print_indent(os, indent + 1);
+    os << "Name: " << decl->identifier->name << "\n";
+    print_indent(os, indent + 1);
+    os << "Params:\n";
+    if (decl->params.empty()) {
+        print_indent(os, indent + 2);
+        os << "Empty\n";
+    } else {
         for (const auto& param : decl->params) {
             print_indent(os, indent + 2);
             os << param.name << " : " << var_type_to_str(param.type) << "\n";
         }
-
-        if (decl->params.empty()) {
-            print_indent(os, indent + 2);
-            os << "Empty\n";
-        }
-
-        print_indent(os, indent + 1);
-        os << "Body:\n";
-
-        for (const auto& stmt : decl->body) {
-            print_stmt(os, stmt.get(), indent + 2);
-        }
     }
-
-    inline void print_if_stmt(std::ostream& os, IfStatement* stmt, size_t indent) {
-        print_indent(os, indent);
-        os << "IfStatement\n";
-        print_expression(os, stmt->condition.get(), indent + 1);
-
-        for (const auto& s : stmt->then_statements) {
-            print_stmt(os, s.get(), indent + 1);
-        }
-
-        for (const auto& s : stmt->else_statements) {
-            print_stmt(os, s.get(), indent + 1);
-        }
+    print_indent(os, indent + 1);
+    os << "Body:\n";
+    for (const auto& stmt : decl->body) {
+        print_stmt(os, stmt.get(), indent + 2);
     }
+}
 
-    inline void print_return_stmt(std::ostream& os, ReturnStatement* stmt, size_t indent) {
-        print_indent(os, indent);
-        os << "ReturnStatement\n";
-
-        if (stmt->value) {
-            print_expression(os, stmt->value.get(), indent + 1);
-        }
+inline void print_if_stmt(std::ostream& os, IfStatement* stmt, size_t indent) {
+    print_indent(os, indent);
+    os << "IfStatement\n";
+    print_expression(os, stmt->condition.get(), indent + 1);
+    for (const auto& s : stmt->then_statements) {
+        print_stmt(os, s.get(), indent + 1);
     }
-
-    inline void print_public_block(std::ostream& os, PublicBlock* block, size_t indent) {
-        print_indent(os, indent);
-        os << "PublicBlock\n";
-
-        for (const auto& s : block->body) {
-            print_stmt(os, s.get(), indent + 1);
-        }
+    for (const auto& s : stmt->else_statements) {
+        print_stmt(os, s.get(), indent + 1);
     }
+}
 
-    inline void print_private_block(std::ostream& os, PrivateBlock* block, size_t indent) {
-        print_indent(os, indent);
-        os << "PrivateBlock\n";
+inline void print_return_stmt(std::ostream& os, ReturnStatement* stmt, size_t indent) {
+    print_indent(os, indent);
+    os << "ReturnStatement\n";
+    if (stmt->value) print_expression(os, stmt->value.get(), indent + 1);
+}
 
-        for (const auto& s : block->body) {
-            print_stmt(os, s.get(), indent + 1);
-        }
+inline void print_public_block(std::ostream& os, PublicBlock* block, size_t indent) {
+    print_indent(os, indent);
+    os << "PublicBlock\n";
+    for (const auto& s : block->body) {
+        print_stmt(os, s.get(), indent + 1);
     }
+}
 
-    inline void print_while_stmt(std::ostream& os, WhileStatement* stmt, size_t indent) {
-        print_indent(os, indent);
-        os << "WhileStatement\n";
-
-        print_expression(os, stmt->condition.get(), indent + 1);
-
-        for (const auto& s : stmt->body) {
-            print_stmt(os, s.get(), indent + 1);
-        }
+inline void print_private_block(std::ostream& os, PrivateBlock* block, size_t indent) {
+    print_indent(os, indent);
+    os << "PrivateBlock\n";
+    for (const auto& s : block->body) {
+        print_stmt(os, s.get(), indent + 1);
     }
+}
 
-    static std::unordered_map<std::type_index, std::function<void(ASTNode*, std::ostream&, size_t)>> dispatcher = {
+inline void print_while_stmt(std::ostream& os, WhileStatement* stmt, size_t indent) {
+    print_indent(os, indent);
+    os << "WhileStatement\n";
+    print_expression(os, stmt->condition.get(), indent + 1);
+    for (const auto& s : stmt->body) {
+        print_stmt(os, s.get(), indent + 1);
+    }
+}
+
+static std::unordered_map<std::type_index, std::function<void(ASTNode*, std::ostream&, size_t)>> dispatcher = {
         DISPATCHER_ENTRY(ast::BinaryExpr, print_binary_expr),
+        DISPATCHER_ENTRY(ast::UnaryExpr, print_unary_expr),
         DISPATCHER_ENTRY(ast::FunctionCallExpr, print_function_call_expr),
         DISPATCHER_ENTRY(ast::GroupingExpr, print_grouping),
         DISPATCHER_ENTRY(ast::IdentifierExpr, print_identifier),

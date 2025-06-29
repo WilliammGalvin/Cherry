@@ -16,9 +16,10 @@ namespace cherry::ast {
         BinaryOp op;
         std::unique_ptr<Expr> left;
         std::unique_ptr<Expr> right;
+        Type type;
 
         BinaryExpr(const BinaryOp op, std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
-            : op(op), left(std::move(left)), right(std::move(right)) {}
+            : op(op), left(std::move(left)), right(std::move(right)), type(INT) {}
     };
 
     static std::string binary_op_to_str(const BinaryOp bin_op) {

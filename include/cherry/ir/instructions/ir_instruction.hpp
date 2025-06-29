@@ -3,8 +3,8 @@
 
 namespace cherry::ir {
 
-    struct IRNode {
-        virtual ~IRNode() = default;
+    struct IRInstruction {
+        virtual ~IRInstruction() = default;
     };
 
 }

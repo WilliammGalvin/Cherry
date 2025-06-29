@@ -1,16 +1,15 @@
 #ifndef IR_PROGRAM_HPP
 #define IR_PROGRAM_HPP
-#include <vector>
 
-#include "ir_node.hpp"
+#include <vector>
 
 namespace cherry::ir {
 
-    struct IRProgram final : IRNode {
-        std::vector<IRNode*> nodes;
+    struct IRProgram {
+        std::vector<std::unique_ptr<IRFunction>> functions;
 
-        explicit IRProgram(const std::vector<IRNode*>&& nodes)
-            : nodes(nodes) {}
+        explicit IRProgram(std::vector<std::unique_ptr<IRFunction>>&& functions)
+            : functions(std::move(functions)) {}
     };
 
 }

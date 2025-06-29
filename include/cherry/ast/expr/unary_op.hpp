@@ -19,6 +19,16 @@ namespace cherry::ast {
             : op(op), operand(std::move(operand)) {}
     };
 
+    static std::string unary_op_to_str(const UnaryOp bin_op) {
+        switch (bin_op) {
+            case UnaryOp::NEGATE: return "NEGATE";
+            case UnaryOp::LOGICAL_NOT: return "NOT";
+
+            default:
+                throw std::runtime_error("Missing string representation of BinaryOp.");
+        }
+    }
+
 }
 
 #endif //UNARY_OP_HPP

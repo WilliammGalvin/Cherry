@@ -1,5 +1,6 @@
 #ifndef SEMANTIC_ANALYZER_HPP
 #define SEMANTIC_ANALYZER_HPP
+#include <functional>
 #include <typeindex>
 #include <cherry/ast/stmt/assignment.hpp>
 #include <cherry/ast/stmt/declaration.hpp>

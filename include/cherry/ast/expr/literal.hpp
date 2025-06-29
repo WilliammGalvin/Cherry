@@ -2,33 +2,36 @@
 #define LITERAL_HPP
 #include <string>
 #include <utility>
+#include <variant>
 
 #include "expression.hpp"
+#include "cherry/ast/types.hpp"
 
 namespace cherry::ast {
 
-    struct IntegerLiteral final : Expr {
-        long long value;
+    struct Literal : Expr {
+        using ValueType = std::variant<std::string, double, long long, bool>;
 
-        explicit IntegerLiteral(const long long value) : value(value) {}
+        Type type;
+        ValueType value;
+
+        Literal(const Type type, ValueType value) : type(type), value(std::move(value)) {};
     };
 
-    struct FloatLiteral final : Expr {
-        double value;
-
-        explicit FloatLiteral(const double value) : value(value) {}
+    struct IntegerLiteral final : Literal {
+        explicit IntegerLiteral(const long long value) : Literal(INT, value) {}
     };
 
-    struct StringLiteral final : Expr {
-        std::string value;
-
-        explicit StringLiteral(std::string  value) : value(std::move(value)) {}
+    struct FloatLiteral final : Literal {
+        explicit FloatLiteral(const double value) : Literal(FLOAT, value) {}
     };
 
-    struct BooleanLiteral final : Expr {
-        bool value;
+    struct StringLiteral final : Literal {
+        explicit StringLiteral(std::string value) : Literal(STRING, std::move(value)) {}
+    };
 
-        explicit BooleanLiteral(const bool value) : value(value) {}
+    struct BooleanLiteral final : Literal {
+        explicit BooleanLiteral(const bool value) : Literal(BOOL, value) {}
     };
 
 }

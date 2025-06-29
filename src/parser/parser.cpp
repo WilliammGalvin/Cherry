@@ -21,6 +21,7 @@ static cherry::ast::Type check_type_keyword(const cherry::lexer::TokenType type)
         case cherry::lexer::KEYWORD_FLOAT: return cherry::ast::FLOAT;
         case cherry::lexer::KEYWORD_STRING: return cherry::ast::STRING;
         case cherry::lexer::KEYWORD_BOOL: return cherry::ast::BOOL;
+        case cherry::lexer::KEYWORD_VOID: return cherry::ast::VOID;
         default: return cherry::ast::NONE;
     }
 }
