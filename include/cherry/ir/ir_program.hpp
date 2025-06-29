@@ -2,6 +2,7 @@
 #define IR_PROGRAM_HPP
 
 #include <vector>
+#include <cherry/ir/ir_function.hpp>
 
 namespace cherry::ir {
 

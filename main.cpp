@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+#include "cherry/codegen/llvm_codegen.hpp"
 #include "cherry/ir/ir_builder.hpp"
 #include "cherry/parser/parser.hpp"
 #include "cherry/printer/ast_printer.hpp"
@@ -9,7 +10,7 @@
 
 int main() {
     cherry::lexer::Lexer lexer;
-    const auto tokens = lexer.lex_file("test.ch");
+    const auto tokens = lexer.lex_file("main.ch");
 
     for (const auto& token : tokens) {
         std::cout << token.to_str() << std::endl;
@@ -32,6 +33,12 @@ int main() {
     cherry::ir::IRBuilder builder;
     std::unique_ptr<cherry::ir::IRProgram> ir_program = std::move(builder.lower_program(*program));
     cherry::ir::printer::print_program(std::cout, ir_program.get());
+
+    std::cout << "~~~~~~~~~~~~" << std::endl;
+
+    cherry::codegen::LLVMGenerator codegen;
+    const llvm::Module* module = codegen.generate(ir_program.get());
+    module->print(llvm::outs(), nullptr);
 
     return 0;
 }
