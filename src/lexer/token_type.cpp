@@ -11,8 +11,9 @@ namespace cherry::lexer {
             case BOOLEAN_LITERAL_TRUE: return "BOOLEAN_LITERAL_TRUE";
             case BOOLEAN_LITERAL_FALSE: return "BOOLEAN_LITERAL_FALSE";
 
+            case KEYWORD_PUBLIC: return "KEYWORD_PUBLIC";
+            case KEYWORD_PRIVATE: return "KEYWORD_PRIVATE";
             case KEYWORD_CONST: return "KEYWORD_CONST";
-            case KEYWORD_VAR: return "KEYWORD_VAR";
             case KEYWORD_INT: return "KEYWORD_INT";
             case KEYWORD_STRING: return "KEYWORD_STRING";
             case KEYWORD_FLOAT: return "KEYWORD_FLOAT";

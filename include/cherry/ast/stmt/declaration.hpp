@@ -6,6 +6,7 @@
 #include "statement.hpp"
 #include <string>
 
+#include "cherry/ast/types.hpp"
 #include "cherry/ast/expr/expression.hpp"
 
 namespace cherry::ast {
@@ -14,12 +15,10 @@ namespace cherry::ast {
         bool is_const;
         std::string name;
         std::unique_ptr<Expr> initializer;
-        std::string explicit_type;
+        Type explicit_type;
 
-        Declaration(const bool is_const, std::string name, std::unique_ptr<Expr> initializer,
-                    std::string explicit_type = "")
-            : is_const(is_const), name(std::move(name)), initializer(std::move(initializer)),
-              explicit_type(std::move(explicit_type)) {}
+        Declaration(const bool is_const, std::string name, std::unique_ptr<Expr> initializer, Type explicit_type)
+            : is_const(is_const), name(std::move(name)), initializer(std::move(initializer)), explicit_type(explicit_type) {}
     };
 
 }

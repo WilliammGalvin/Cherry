@@ -14,8 +14,9 @@ namespace cherry::lexer {
         BOOLEAN_LITERAL_TRUE,
         BOOLEAN_LITERAL_FALSE,
 
+        KEYWORD_PUBLIC,
+        KEYWORD_PRIVATE,
         KEYWORD_CONST,
-        KEYWORD_VAR,
         KEYWORD_INT,
         KEYWORD_FLOAT,
         KEYWORD_STRING,

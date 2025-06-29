@@ -5,7 +5,6 @@
 
 #include "statement.hpp"
 #include "cherry/ast/expr/expression.hpp"
-#include "cherry/ast/expr/identifier.hpp"
 
 namespace cherry::ast {
 
@@ -13,7 +12,7 @@ namespace cherry::ast {
         std::string callee;
         std::vector<std::unique_ptr<Expr>> args;
 
-        FunctionCallStatement(std::string callee, std::vector<std::unique_ptr<Expr>> args)
+        FunctionCallStatement(std::string callee, std::vector<std::unique_ptr<Expr>>&& args)
             : callee(std::move(callee)), args(std::move(args)) {}
     };
 

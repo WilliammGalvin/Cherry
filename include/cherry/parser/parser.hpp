@@ -6,15 +6,14 @@
 #include <cherry/lexer/token.hpp>
 
 #include "cherry/ast/program.hpp"
-#include "cherry/ast/expr/literal.hpp"
 #include "cherry/ast/stmt/assignment.hpp"
-#include "cherry/ast/stmt/builtin_function_call.hpp"
 #include "cherry/ast/stmt/declaration.hpp"
 #include "cherry/ast/stmt/function_call.hpp"
 #include "cherry/ast/stmt/function_decl.hpp"
 #include "cherry/ast/stmt/if_statement.hpp"
 #include "cherry/ast/stmt/return_statement.hpp"
 #include "cherry/ast/stmt/while_loop.hpp"
+#include "cherry/ast/stmt/scope_blocks.hpp"
 
 namespace cherry::parser {
 
@@ -31,6 +30,7 @@ namespace cherry::parser {
 
         std::vector<std::unique_ptr<ast::Expr>> parse_expr_list();
         std::unique_ptr<ast::IdentifierExpr> parse_identifier();
+        std::vector<std::unique_ptr<ast::Statement>> parse_body_block();
 
         std::unique_ptr<ast::Expr> parse_function_expr();
         std::unique_ptr<ast::Expr> parse_logical_or();
@@ -49,6 +49,8 @@ namespace cherry::parser {
         std::unique_ptr<ast::WhileStatement> parse_while_statement();
         std::unique_ptr<ast::ReturnStatement> parse_return_statement();
         std::unique_ptr<ast::FunctionCallStatement> parse_function_call_statement();
+        std::unique_ptr<ast::PublicBlock> parse_public_scope_statement();
+        std::unique_ptr<ast::PrivateBlock> parse_private_scope_statement();
 
         std::unique_ptr<ast::Statement> parse_stmt();
 

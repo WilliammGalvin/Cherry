@@ -12,7 +12,7 @@ namespace cherry::ast {
         std::string callee;
         std::vector<std::unique_ptr<Expr>> args;
 
-        FunctionCallExpr(std::string callee, std::vector<std::unique_ptr<Expr>> args)
+        FunctionCallExpr(std::string callee, std::vector<std::unique_ptr<Expr>>&& args)
             : callee(std::move(callee)), args(std::move(args)) {}
     };
 

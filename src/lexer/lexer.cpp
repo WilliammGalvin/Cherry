@@ -78,8 +78,9 @@ bool Lexer::match_keyword() {
         return false;
 
     const std::unordered_map<std::string, TokenType> keywords = {
+        { "public", KEYWORD_PUBLIC },
+        { "private", KEYWORD_PRIVATE },
         { "const", KEYWORD_CONST },
-        { "var", KEYWORD_VAR },
         { "int", KEYWORD_INT },
         { "string", KEYWORD_STRING },
         { "float", KEYWORD_FLOAT },
