@@ -2,8 +2,8 @@
 #define IR_BINARY_OP_H
 #include <stdexcept>
 
-#include "../instructions/ir_instruction.hpp"
 #include "ir_value.hpp"
+#include "cherry/ast/expr/binary_op.hpp"
 
 namespace cherry::ir {
 
