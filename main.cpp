@@ -15,19 +15,17 @@ int main() {
         std::cout << token.to_str() << std::endl;
     }
 
-    std::cout << "~~~~~~~~~~~~" << std::endl;
+    std::cout << "AST ~~~~~~~~~~~~" << std::endl;
 
     cherry::parser::Parser parser(tokens);
     const auto program = parser.parse_program();
     cherry::ast::printer::print_program(std::cout, program.get());
 
-    std::cout << "~~~~~~~~~~~~" << std::endl;
-
-    // std::cout << "Semantically Analyzing..." << std::endl;
+    // std::cout << "Semantical Analysis ~~~~~~~~~~~~" << std::endl;
     // cherry::semantic::SemanticAnalyzer analyzer;
     // analyzer.analyze(program.get());
-    //
-    // std::cout << "~~~~~~~~~~~~" << std::endl;
+
+    std::cout << "IR ~~~~~~~~~~~~" << std::endl;
 
     cherry::ir::IRBuilder builder;
     std::unique_ptr<cherry::ir::IRProgram> ir_program = std::move(builder.lower_program(*program));
