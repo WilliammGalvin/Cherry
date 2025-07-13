@@ -5,6 +5,7 @@ namespace cherry::lexer {
     std::string token_type_to_str(const TokenType type) {
         switch (type) {
             case IDENTIFIER: return "IDENTIFIER";
+            case DIRECTIVE: return "DIRECTIVE";
             case INTEGER_LITERAL: return "INTEGER_LITERAL";
             case FLOAT_LITERAL: return "FLOAT_LITERAL";
             case STRING_LITERAL: return "STRING_LITERAL";
@@ -25,6 +26,8 @@ namespace cherry::lexer {
             case KEYWORD_FUNC: return "KEYWORD_FUNC";
             case KEYWORD_RETURN: return "KEYWORD_RETURN";
             case KEYWORD_VOID: return "KEYWORD_VOID";
+            case KEYWORD_CONTINUE: return "KEYWORD_CONTINUE";
+            case KEYWORD_BREAK: return "KEYWORD_BREAK";
 
             case COLON: return "COLON";
             case SEMI_COLON: return "SEMI_COLON";
@@ -33,6 +36,8 @@ namespace cherry::lexer {
             case RIGHT_PAREN: return "RIGHT_PAREN";
             case LEFT_BRACE: return "LEFT_BRACE";
             case RIGHT_BRACE: return "RIGHT_BRACE";
+            case LEFT_SQUARE_BRACKET: return "LEFT_SQUARE_BRACKET";
+            case RIGHT_SQUARE_BRACKET: return "RIGHT_SQUARE_BRACKET";
 
             case GREATER_THAN: return "GREATER_THAN";
             case LESSER_THAN: return "LESSER_THAN";

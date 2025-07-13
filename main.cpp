@@ -4,12 +4,14 @@
 
 #include "cherry/ir/ir_builder.hpp"
 #include "cherry/parser/parser.hpp"
-#include "cherry/printer/ast_printer.hpp"
-#include "cherry/printer/ir_printer.hpp"
+#include "cherry/debug/ast_printer.hpp"
+#include "cherry/debug/ir_printer.hpp"
 
 int main() {
     cherry::lexer::Lexer lexer;
     const auto tokens = lexer.lex_file("main.ch");
+
+    std::cout << "Tokens ~~~~~~~~~~~~" << std::endl;
 
     for (const auto& token : tokens) {
         std::cout << token.to_str() << std::endl;
@@ -27,11 +29,11 @@ int main() {
     // analyzer.analyze(program.get());
     // std::cout << "Completed." << std::endl;
 
-    // std::cout << "IR ~~~~~~~~~~~~" << std::endl;
-    //
-    // cherry::ir::IRBuilder builder;
-    // std::unique_ptr<cherry::ir::IRProgram> ir_program = std::move(builder.lower_program(*program));
-    // cherry::ir::printer::print_program(std::cout, ir_program.get());
+    std::cout << "IR ~~~~~~~~~~~~" << std::endl;
+
+    cherry::ir::IRBuilder builder;
+    std::unique_ptr<cherry::ir::IRProgram> ir_program = std::move(builder.lower_program(*program));
+    cherry::ir::printer::print_program(std::cout, ir_program.get());
 
     return 0;
 }

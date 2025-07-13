@@ -515,8 +515,23 @@ std::unique_ptr<cherry::ast::ForStatement> Parser::parse_for_statement() {
 
 std::unique_ptr<cherry::ast::ReturnStatement> Parser::parse_return_statement() {
     expect(lexer::KEYWORD_RETURN, "Expected 'return' keyword for condition.");
-    auto value = parse_logical_or();
+    std::unique_ptr<ast::Expr> value = nullptr;
+
+    if (peek().type != lexer::SEMI_COLON) {
+        value = parse_logical_or();
+    }
+
     return std::make_unique<ast::ReturnStatement>(std::move(value));
+}
+
+std::unique_ptr<cherry::ast::ContinueStatement> Parser::parse_continue_statement() {
+    expect(lexer::KEYWORD_CONTINUE, "Expected 'continue' keyword.");
+    return std::make_unique<ast::ContinueStatement>();
+}
+
+std::unique_ptr<cherry::ast::BreakStatement> Parser::parse_break_statement() {
+    expect(lexer::KEYWORD_BREAK, "Expected 'break' keyword.");
+    return std::make_unique<ast::BreakStatement>();
 }
 
 std::unique_ptr<cherry::ast::FunctionCallStatement> Parser::parse_function_call_statement() {
@@ -544,13 +559,33 @@ std::unique_ptr<cherry::ast::VisibilityScope> Parser::parse_scope_statement() {
 
     if (match(lexer::KEYWORD_PUBLIC)) visibility = ast::PUBLIC;
     else if (match(lexer::KEYWORD_PRIVATE)) visibility = ast::PRIVATE;
+    else if (match(lexer::LEFT_BRACE)) visibility = ast::LOCAL;
     else throw ParseError("Unexpected scope visibility.");
 
-    expect(lexer::LEFT_BRACE, "Expected '{' to start scope body.");
+    if (visibility != ast::LOCAL) expect(lexer::LEFT_BRACE, "Expected '{' to start scope body.");
     auto body = parse_body_block();
     expect(lexer::RIGHT_BRACE, "Expected '}' to close body block.");
 
     return std::make_unique<ast::VisibilityScope>(visibility, std::move(body));
+}
+
+std::unique_ptr<cherry::ast::SysCallDirective> Parser::parse_sys_call_directive() {
+    if (peek().type != lexer::DIRECTIVE) {
+        throw ParseError("Expected a directive token.");
+    }
+
+    if (peek().value != "syscall") {
+        throw ParseError("Expected 'syscall' directive.");
+    }
+
+    advance();
+    const auto identifier = expect(lexer::IDENTIFIER, "Expected identifier after 'syscall' directive.");
+    const std::string call_name = identifier.value;
+
+    const auto content_tok = expect (lexer::STRING_LITERAL, "Expected string literal after syscall identifier.");
+    const std::string content = content_tok.value;
+
+    return std::make_unique<ast::SysCallDirective>(call_name, content);
 }
 
 std::unique_ptr<cherry::ast::Statement> Parser::parse_stmt() {
@@ -588,6 +623,28 @@ std::unique_ptr<cherry::ast::Statement> Parser::parse_stmt() {
         return ret;
     }
 
+    if (peek().type == lexer::KEYWORD_CONTINUE) {
+        auto cont = parse_continue_statement();
+        expect(lexer::SEMI_COLON, "Expected ';' after continue.");
+        return cont;
+    }
+
+    if (peek().type == lexer::KEYWORD_BREAK) {
+        auto brk = parse_break_statement();
+        expect(lexer::SEMI_COLON, "Expected ';' after break.");
+        return brk;
+    }
+
+    if (peek().type == lexer::DIRECTIVE) {
+        if (peek().value == "syscall") {
+            auto dir = parse_sys_call_directive();
+            expect(lexer::SEMI_COLON, "Expected ';' after directive.");
+            return dir;
+        }
+
+        throw ParseError("Unknown directive: " + peek().value);
+    }
+
     if (
         peek().type == lexer::IDENTIFIER &&
         (
@@ -620,6 +677,10 @@ std::unique_ptr<cherry::ast::Statement> Parser::parse_stmt() {
         ) &&
         peek(1).type == lexer::LEFT_BRACE
     ) {
+        return parse_scope_statement();
+    }
+
+    if (peek().type == lexer::LEFT_BRACE) {
         return parse_scope_statement();
     }
 

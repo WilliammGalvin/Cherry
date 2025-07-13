@@ -7,9 +7,9 @@
 namespace cherry::ir {
 
     struct IRProgram {
-        std::vector<std::unique_ptr<IRScope>> scopes;
+        std::vector<std::unique_ptr<IRGlobalScope>> scopes;
 
-        explicit IRProgram(std::vector<std::unique_ptr<IRScope>>&& scopes)
+        explicit IRProgram(std::vector<std::unique_ptr<IRGlobalScope>>&& scopes)
             : scopes(std::move(scopes)) {}
     };
 

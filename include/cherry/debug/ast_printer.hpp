@@ -175,7 +175,22 @@ namespace cherry::ast::printer {
     inline void print_return_stmt(std::ostream& os, ReturnStatement* stmt, size_t indent) {
         print_indent(os, indent);
         os << "ReturnStatement\n";
-        if (stmt->value) print_expression(os, stmt->value.get(), indent + 1);
+        if (stmt->value) {
+            print_expression(os, stmt->value.get(), indent + 1);
+        } else {
+            print_indent(os, indent + 1);
+            os << "VOID";
+        }
+    }
+
+    inline void print_continue_stmt(std::ostream& os, ContinueStatement* stmt, size_t indent) {
+        print_indent(os, indent);
+        os << "ContinueStatement\n";
+    }
+
+    inline void print_break_stmt(std::ostream& os, BreakStatement* stmt, size_t indent) {
+        print_indent(os, indent);
+        os << "BreakStatement\n";
     }
 
     inline void print_scope_stmt(std::ostream& os, VisibilityScope* block, size_t indent) {
@@ -220,6 +235,13 @@ namespace cherry::ast::printer {
         }
     }
 
+    inline void print_sys_call_directive(std::ostream& os, SysCallDirective* directive, size_t indent) {
+        print_indent(os, indent);
+        os << "SysCallDirective: " << directive->call_name << "\n";
+        print_indent(os, indent + 1);
+        os << "Content: " << directive->content << "\n";
+    }
+
     static std::unordered_map<std::type_index, std::function<void(ASTNode*, std::ostream&, size_t)>> dispatcher = {
             DISPATCHER_ENTRY(ast::BinaryExpr, print_binary_expr),
             DISPATCHER_ENTRY(ast::UnaryExpr, print_unary_expr),
@@ -236,9 +258,12 @@ namespace cherry::ast::printer {
             DISPATCHER_ENTRY(ast::FunctionDecl, print_function_decl),
             DISPATCHER_ENTRY(ast::IfStatement, print_if_stmt),
             DISPATCHER_ENTRY(ast::ReturnStatement, print_return_stmt),
+            DISPATCHER_ENTRY(ast::ContinueStatement, print_continue_stmt),
+            DISPATCHER_ENTRY(ast::BreakStatement, print_break_stmt),
             DISPATCHER_ENTRY(ast::VisibilityScope, print_scope_stmt),
             DISPATCHER_ENTRY(ast::WhileStatement, print_while_stmt),
-            DISPATCHER_ENTRY(ast::ForStatement, print_for_stmt)
+            DISPATCHER_ENTRY(ast::ForStatement, print_for_stmt),
+            DISPATCHER_ENTRY(ast::SysCallDirective, print_sys_call_directive)
     };
 
     inline void print_expression(std::ostream& os, Expr* expr, size_t indent) {

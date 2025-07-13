@@ -62,8 +62,8 @@ add_executable(Cherry
         include/cherry/ir/values/ir_function_call.hpp
 
         # Printers
-        include/cherry/printer/ast_printer.hpp
-        include/cherry/printer/ir_printer.hpp
+        include/cherry/debug/ast_printer.hpp
+        include/cherry/debug/ir_printer.hpp
 
         # Other headers
         include/cherry/semantic/semantic_error.hpp
@@ -73,6 +73,13 @@ add_executable(Cherry
         include/cherry/ir/instructions/ir_while.hpp
         include/cherry/ast/stmt/for_statement.hpp
         include/cherry/ir/ir_scope.hpp
+        include/cherry/ast/stmt/continue_statement.hpp
+        include/cherry/ast/stmt/break_statement.hpp
+        include/cherry/ir/instructions/ir_continue.hpp
+        include/cherry/ir/instructions/ir_break.hpp
+        include/cherry/ir/instructions/ir_for.hpp
+        include/cherry/ast/stmt/directive_statement.hpp
+        include/cherry/ir/instructions/ir_directives.hpp
 )
 
 target_link_libraries(Cherry

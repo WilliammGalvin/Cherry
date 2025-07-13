@@ -7,7 +7,10 @@
 
 #include "cherry/ast/program.hpp"
 #include "cherry/ast/stmt/assignment.hpp"
+#include "cherry/ast/stmt/break_statement.hpp"
+#include "cherry/ast/stmt/continue_statement.hpp"
 #include "cherry/ast/stmt/declaration.hpp"
+#include "cherry/ast/stmt/directive_statement.hpp"
 #include "cherry/ast/stmt/for_statement.hpp"
 #include "cherry/ast/stmt/function_call.hpp"
 #include "cherry/ast/stmt/function_decl.hpp"
@@ -50,8 +53,11 @@ namespace cherry::parser {
         std::unique_ptr<ast::WhileStatement> parse_while_statement();
         std::unique_ptr<ast::ForStatement> parse_for_statement();
         std::unique_ptr<ast::ReturnStatement> parse_return_statement();
+        std::unique_ptr<ast::ContinueStatement> parse_continue_statement();
+        std::unique_ptr<ast::BreakStatement> parse_break_statement();
         std::unique_ptr<ast::FunctionCallStatement> parse_function_call_statement();
         std::unique_ptr<ast::VisibilityScope> parse_scope_statement();
+        std::unique_ptr<ast::SysCallDirective> parse_sys_call_directive();
 
         std::unique_ptr<ast::Statement> parse_stmt();
 

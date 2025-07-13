@@ -37,10 +37,10 @@ namespace cherry::ir::printer {
     );
 
     inline void print_function_decl(
-    std::ostream& os,
-    IRFunction* func,
-    size_t indent = 0
-) {
+        std::ostream& os,
+        IRFunction* func,
+        size_t indent = 0
+    ) {
         print_indent(os, indent);
         os << "FunctionDecl:" << '\n';
 
@@ -77,9 +77,9 @@ namespace cherry::ir::printer {
         }
     }
 
-    inline void print_scope(
+    inline void print_global_scope(
         std::ostream& os,
-        IRScope* scope,
+        IRGlobalScope* scope,
         size_t indent = 0
     ) {
         print_indent(os, indent);
@@ -90,8 +90,23 @@ namespace cherry::ir::printer {
             default: os << "UnknownScope:" << '\n';
         }
 
-        for (const auto& func : scope->functions) {
+        for (const auto& func : scope->contents) {
             print_function_decl(os, func.get(), indent + 1);
+        }
+    }
+
+    inline void print_local_scope(
+        std::ostream& os,
+        IRLocalScope* scope,
+        size_t indent = 0
+    ) {
+        print_indent(os, indent);
+
+        if (scope->visibility == LOCAL) os << "LocalScope:" << '\n';
+        else os << "UnknownScope:" << '\n';
+
+        for (const auto& instr : scope->contents) {
+            print_node(os, instr.get(), indent + 1);
         }
     }
 
@@ -103,7 +118,7 @@ namespace cherry::ir::printer {
         print_indent(os, indent);
         os << "Program:" << '\n';
         for (const auto& scope : program->scopes) {
-            print_scope(os, scope.get(), indent + 1);
+            print_global_scope(os, scope.get(), indent + 1);
         }
     }
 
@@ -150,17 +165,39 @@ namespace cherry::ir::printer {
         print_indent(os, indent);
         os << "Return:" << '\n';
 
-        print_indent(os, indent + 1);
-        os << "Value:" << '\n';
-        print_value(os, ret->value, indent + 2);
-        os << '\n';
+        if (ret->value) {
+            print_indent(os, indent + 1);
+            os << "Value:" << '\n';
+            print_value(os, ret->value, indent + 2);
+        } else {
+            print_indent(os, indent + 1);
+            os << "Value: VOID" << '\n';
+        }
+    }
+
+    inline void print_continue(
+        std::ostream& os,
+        IRContinue* cont,
+        size_t indent = 0
+    ) {
+        print_indent(os, indent);
+        os << "Continue\n";
+    }
+
+    inline void print_break(
+        std::ostream& os,
+        IRBreak* brk,
+        size_t indent = 0
+    ) {
+        print_indent(os, indent);
+        os << "Break\n";
     }
 
     inline void print_if(
-    std::ostream& os,
-    IRIf* ifstmt,
-    size_t indent
-) {
+        std::ostream& os,
+        IRIf* ifstmt,
+        size_t indent
+    ) {
         print_indent(os, indent);
         os << "If:\n";
 
@@ -198,6 +235,58 @@ namespace cherry::ir::printer {
         for (const auto& stmt : while_stmt->body) {
             print_node(os, stmt.get(), indent + 2);
         }
+    }
+
+    inline void print_for(
+        std::ostream& os,
+        IRFor* for_stmt,
+        size_t indent
+    ) {
+        print_indent(os, indent);
+        os << "For:\n";
+
+        if (for_stmt->init) {
+            print_indent(os, indent + 1);
+            os << "Initializer:\n";
+            print_node(os, for_stmt->init.get(), indent + 2);
+        } else {
+            print_indent(os, indent + 1);
+            os << "Initializer: None\n";
+        }
+
+        print_indent(os, indent + 1);
+        os << "Condition:\n";
+        print_value(os, for_stmt->condition, indent + 2);
+
+        if (for_stmt->increment) {
+            print_indent(os, indent + 1);
+            os << "Increment:\n";
+            print_node(os, for_stmt->increment.get(), indent + 2);
+        } else {
+            print_indent(os, indent + 1);
+            os << "Increment: None\n";
+        }
+
+        print_indent(os, indent + 1);
+        os << "Body:\n";
+        for (const auto& stmt : for_stmt->body) {
+            print_node(os, stmt.get(), indent + 2);
+        }
+    }
+
+    inline void print_sys_call_directive(
+        std::ostream& os,
+        IRSysCallDirective* dir,
+        size_t indent = 0
+    ) {
+        print_indent(os, indent);
+        os << "SysCallDirective:\n";
+
+        print_indent(os, indent + 1);
+        os << "CallName: " << dir->call_name << '\n';
+
+        print_indent(os, indent + 1);
+        os << "Content: " << dir->content << '\n';
     }
 
     inline void print_function_call(
@@ -307,6 +396,10 @@ namespace cherry::ir::printer {
             print_assignment(os, assign, indent);
         } else if (auto* ret = dynamic_cast<IRReturn*>(node)) {
             print_return(os, ret, indent);
+        } else if (auto* cont = dynamic_cast<IRContinue*>(node)) {
+            print_continue(os, cont, indent);
+        } else if (auto* brk = dynamic_cast<IRBreak*>(node)) {
+            print_break(os, brk, indent);
         } else if (auto* fc = dynamic_cast<IRFunctionCall*>(node)) {
             print_function_call(os, fc, indent);
         } else if (auto* bin = dynamic_cast<IRBinary*>(node)) {
@@ -317,6 +410,12 @@ namespace cherry::ir::printer {
             print_if(os, ifstmt, indent);
         } else if (auto* whilestmt = dynamic_cast<IRWhile*>(node)) {
             print_while(os, whilestmt, indent);
+        } else if (auto* forstmt = dynamic_cast<IRFor*>(node)) {
+            print_for(os, forstmt, indent);
+        } else if (auto* dir = dynamic_cast<IRSysCallDirective*>(node)) {
+            print_sys_call_directive(os, dir, indent);
+        } else if (auto* local_scope = dynamic_cast<IRLocalScope*>(node)) {
+            print_local_scope(os, local_scope, indent);
         } else {
             print_indent(os, indent);
             os << "<Unknown IRInstruction>\n";

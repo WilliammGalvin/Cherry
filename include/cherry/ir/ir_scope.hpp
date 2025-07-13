@@ -8,15 +8,31 @@
 namespace cherry::ir {
 
     enum ScopeVisibility {
-        PUBLIC, PRIVATE
+        PUBLIC, PRIVATE, LOCAL
     };
 
-    struct IRScope {
+    struct IRAbstractScope {
         ScopeVisibility visibility;
-        std::vector<std::unique_ptr<IRFunction>> functions;
+        explicit IRAbstractScope(const ScopeVisibility visibility) : visibility(visibility) {}
+        virtual ~IRAbstractScope() = default;
+    };
 
-        IRScope(const ScopeVisibility visibility, std::vector<std::unique_ptr<IRFunction>>&& functions)
-            : visibility(visibility), functions(std::move(functions)) {}
+    template <typename T>
+    struct IRScope : IRAbstractScope {
+        std::vector<std::unique_ptr<T>> contents;
+
+        IRScope(const ScopeVisibility visibility, std::vector<std::unique_ptr<T>>&& contents)
+            : IRAbstractScope(visibility), contents(std::move(contents)) {}
+    };
+
+    struct IRGlobalScope final : IRScope<IRFunction> {
+        IRGlobalScope(const ScopeVisibility visibility, std::vector<std::unique_ptr<IRFunction>>&& functions)
+            : IRScope(visibility, std::move(functions)) {}
+    };
+
+    struct IRLocalScope final : IRScope<IRInstruction>, IRInstruction {
+        IRLocalScope(const ScopeVisibility visibility, std::vector<std::unique_ptr<IRInstruction>>&& body)
+            : IRScope(visibility, std::move(body)) {}
     };
 
 }

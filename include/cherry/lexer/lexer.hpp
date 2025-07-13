@@ -23,9 +23,9 @@ namespace cherry::lexer {
         bool match_symbol();
         bool match_number_literal();
         bool match_string_literal();
-        bool match_builtin_function();
         bool match_keyword();
         bool match_identifier();
+        bool match_directive();
 
         void lex_line();
 

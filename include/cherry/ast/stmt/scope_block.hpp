@@ -8,7 +8,7 @@
 namespace cherry::ast {
 
     enum ScopeVisibility {
-        PUBLIC, PRIVATE
+        PUBLIC, PRIVATE, LOCAL
     };
 
     struct VisibilityScope final : Statement {

@@ -7,6 +7,7 @@ namespace cherry::lexer {
 
     enum TokenType {
         IDENTIFIER,
+        DIRECTIVE,
 
         INTEGER_LITERAL,
         FLOAT_LITERAL,
@@ -28,6 +29,8 @@ namespace cherry::lexer {
         KEYWORD_FUNC,
         KEYWORD_RETURN,
         KEYWORD_VOID,
+        KEYWORD_CONTINUE,
+        KEYWORD_BREAK,
 
         SEMI_COLON,
         COLON,
@@ -36,6 +39,8 @@ namespace cherry::lexer {
         RIGHT_PAREN,
         LEFT_BRACE,
         RIGHT_BRACE,
+        LEFT_SQUARE_BRACKET,
+        RIGHT_SQUARE_BRACKET,
         GREATER_THAN,
         LESSER_THAN,
         GREATER_THAN_OR_EQUAL,

@@ -53,6 +53,8 @@ bool Lexer::match_keyword() {
         { "public", KEYWORD_PUBLIC },
         { "private", KEYWORD_PRIVATE },
         { "const", KEYWORD_CONST },
+        { "continue", KEYWORD_CONTINUE },
+        { "break", KEYWORD_BREAK },
         { "int", KEYWORD_INT },
         { "string", KEYWORD_STRING },
         { "float", KEYWORD_FLOAT },
@@ -60,7 +62,7 @@ bool Lexer::match_keyword() {
         { "if", KEYWORD_IF },
         { "else", KEYWORD_ELSE },
         { "while", KEYWORD_WHILE },
-        { "for", KEYWORD_FOR },
+        { "loop", KEYWORD_FOR },
         { "func", KEYWORD_FUNC },
         { "return", KEYWORD_RETURN },
         { "void", KEYWORD_VOID },
@@ -94,6 +96,8 @@ bool Lexer::match_symbol() {
         {")", RIGHT_PAREN},
         {"{", LEFT_BRACE},
         {"}", RIGHT_BRACE},
+        {"[", LEFT_SQUARE_BRACKET},
+        {"]", RIGHT_SQUARE_BRACKET},
         {">=", GREATER_THAN_OR_EQUAL},
         {"<=", LESSER_THAN_OR_EQUAL},
         {">", GREATER_THAN},
@@ -202,6 +206,22 @@ bool Lexer::match_string_literal() {
     return false;
 }
 
+bool Lexer::match_directive() {
+    if (peek() != '@') {
+        return false;
+    }
+
+    advance();
+    std::string directive;
+
+    while (!is_empty() && is_alphanumeric_or_underscore(peek())) {
+        directive += consume();
+    }
+
+    tokens.emplace_back(DIRECTIVE, directive);
+    return true;
+}
+
 void Lexer::lex_line() {
     while (!is_empty()) {
         if (std::isspace(peek())) {
@@ -237,6 +257,7 @@ void Lexer::lex_line() {
             || match_number_literal()
             || match_string_literal()
             || match_identifier()
+            || match_directive()
         ) continue;
 
         throw LexError("Unable to determine token for source:\n" + line_source + "\n");
