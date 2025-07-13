@@ -2,7 +2,6 @@
 
 #include <iostream>
 
-#include "cherry/codegen/llvm_codegen.hpp"
 #include "cherry/ir/ir_builder.hpp"
 #include "cherry/parser/parser.hpp"
 #include "cherry/printer/ast_printer.hpp"
@@ -23,20 +22,16 @@ int main() {
     cherry::ast::printer::print_program(std::cout, program.get());
 
     // std::cout << "Semantical Analysis ~~~~~~~~~~~~" << std::endl;
+
     // cherry::semantic::SemanticAnalyzer analyzer;
     // analyzer.analyze(program.get());
+    // std::cout << "Completed." << std::endl;
 
-    std::cout << "IR ~~~~~~~~~~~~" << std::endl;
-
-    cherry::ir::IRBuilder builder;
-    std::unique_ptr<cherry::ir::IRProgram> ir_program = std::move(builder.lower_program(*program));
-    cherry::ir::printer::print_program(std::cout, ir_program.get());
-
-    std::cout << "~~~~~~~~~~~~" << std::endl;
-
-    cherry::codegen::LLVMGenerator codegen;
-    const llvm::Module* module = codegen.generate(ir_program.get());
-    module->print(llvm::outs(), nullptr);
+    // std::cout << "IR ~~~~~~~~~~~~" << std::endl;
+    //
+    // cherry::ir::IRBuilder builder;
+    // std::unique_ptr<cherry::ir::IRProgram> ir_program = std::move(builder.lower_program(*program));
+    // cherry::ir::printer::print_program(std::cout, ir_program.get());
 
     return 0;
 }

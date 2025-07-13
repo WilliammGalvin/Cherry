@@ -24,12 +24,10 @@ namespace cherry::lexer {
         KEYWORD_IF,
         KEYWORD_ELSE,
         KEYWORD_WHILE,
+        KEYWORD_FOR,
         KEYWORD_FUNC,
         KEYWORD_RETURN,
         KEYWORD_VOID,
-
-        BUILTIN_PRINTLN,
-        BUILTIN_PRINT,
 
         SEMI_COLON,
         COLON,
@@ -53,6 +51,11 @@ namespace cherry::lexer {
         AND,
         BANG,
         BANG_EQUAL,
+        PLUS_EQUAL,
+        MINUS_EQUAL,
+        STAR_EQUAL,
+        SLASH_EQUAL,
+        PERCENT_EQUAL,
 
         LINE_END,
         END_OF_FILE,

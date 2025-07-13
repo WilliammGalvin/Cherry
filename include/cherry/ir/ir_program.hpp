@@ -2,15 +2,15 @@
 #define IR_PROGRAM_HPP
 
 #include <vector>
-#include <cherry/ir/ir_function.hpp>
+#include "ir_scope.hpp"
 
 namespace cherry::ir {
 
     struct IRProgram {
-        std::vector<std::unique_ptr<IRFunction>> functions;
+        std::vector<std::unique_ptr<IRScope>> scopes;
 
-        explicit IRProgram(std::vector<std::unique_ptr<IRFunction>>&& functions)
-            : functions(std::move(functions)) {}
+        explicit IRProgram(std::vector<std::unique_ptr<IRScope>>&& scopes)
+            : scopes(std::move(scopes)) {}
     };
 
 }

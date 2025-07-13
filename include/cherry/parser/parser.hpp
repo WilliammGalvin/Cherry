@@ -8,12 +8,13 @@
 #include "cherry/ast/program.hpp"
 #include "cherry/ast/stmt/assignment.hpp"
 #include "cherry/ast/stmt/declaration.hpp"
+#include "cherry/ast/stmt/for_statement.hpp"
 #include "cherry/ast/stmt/function_call.hpp"
 #include "cherry/ast/stmt/function_decl.hpp"
 #include "cherry/ast/stmt/if_statement.hpp"
 #include "cherry/ast/stmt/return_statement.hpp"
 #include "cherry/ast/stmt/while_loop.hpp"
-#include "cherry/ast/stmt/scope_blocks.hpp"
+#include "cherry/ast/stmt/scope_block.hpp"
 
 namespace cherry::parser {
 
@@ -47,10 +48,10 @@ namespace cherry::parser {
         std::unique_ptr<ast::FunctionDecl> parse_function_decl();
         std::unique_ptr<ast::IfStatement> parse_if_statement();
         std::unique_ptr<ast::WhileStatement> parse_while_statement();
+        std::unique_ptr<ast::ForStatement> parse_for_statement();
         std::unique_ptr<ast::ReturnStatement> parse_return_statement();
         std::unique_ptr<ast::FunctionCallStatement> parse_function_call_statement();
-        std::unique_ptr<ast::PublicBlock> parse_public_scope_statement();
-        std::unique_ptr<ast::PrivateBlock> parse_private_scope_statement();
+        std::unique_ptr<ast::VisibilityScope> parse_scope_statement();
 
         std::unique_ptr<ast::Statement> parse_stmt();
 

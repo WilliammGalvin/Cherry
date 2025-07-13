@@ -3,16 +3,6 @@ project(Cherry)
 
 set(CMAKE_CXX_STANDARD 20)
 
-# === LLVM ===
-find_package(LLVM REQUIRED CONFIG)
-llvm_map_components_to_libnames(llvm_libs support core irreader)
-
-message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
-message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
-
-include_directories(${LLVM_INCLUDE_DIRS})
-add_definitions(${LLVM_DEFINITIONS})
-
 # === Include Path ===
 include_directories(include)
 
@@ -79,8 +69,10 @@ add_executable(Cherry
         include/cherry/semantic/semantic_error.hpp
         include/cherry/ast/types.hpp
         include/cherry/ast/expr/grouping.hpp
-        include/cherry/codegen/llvm_codegen.hpp
-        src/codegen/llvm_codegen.cpp
+        include/cherry/ir/instructions/ir_if.hpp
+        include/cherry/ir/instructions/ir_while.hpp
+        include/cherry/ast/stmt/for_statement.hpp
+        include/cherry/ir/ir_scope.hpp
 )
 
 target_link_libraries(Cherry
@@ -89,5 +81,4 @@ target_link_libraries(Cherry
         cherry_parser
         cherry_ast
         cherry_semantic
-        ${llvm_libs}
 )
