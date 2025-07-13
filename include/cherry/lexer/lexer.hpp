@@ -10,7 +10,7 @@ namespace cherry::lexer {
     class Lexer {
         std::vector<Token> tokens;
         std::string line_source;
-        size_t index = 0;
+        size_t index{ 0 };
 
         bool in_block_comment = false;
 
@@ -18,7 +18,7 @@ namespace cherry::lexer {
         char consume();
         void advance(size_t pos = 1);
         [[nodiscard]] bool is_empty() const;
-        bool match_front(const std::string& str) const;
+        [[nodiscard]] bool match_front(const std::string& str) const;
 
         bool match_symbol();
         bool match_number_literal();

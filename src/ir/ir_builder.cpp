@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <memory>
 
+#include "cherry/ast/stmt/scope_block.hpp"
 #include "cherry/ir/ir_error.hpp"
 
 namespace cherry::ir {
@@ -31,11 +32,21 @@ namespace cherry::ir {
         if (auto* decl = dynamic_cast<const ast::Declaration*>(&stmt)) {
             return lower_declaration(*decl);
         }
+
         if (auto* assign = dynamic_cast<const ast::Assignment*>(&stmt)) {
             return lower_assignment(*assign);
         }
+
         if (auto* ret = dynamic_cast<const ast::ReturnStatement*>(&stmt)) {
             return lower_return(*ret);
+        }
+
+        if (auto* if_stmt = dynamic_cast<const ast::IfStatement*>(&stmt)) {
+            return lower_if_stmt(*if_stmt);
+        }
+
+        if (auto* while_stmt = dynamic_cast<const ast::WhileStatement*>(&stmt)) {
+            return lower_while_stmt(*while_stmt);
         }
 
         throw IRError("Unsupported statement type in IRBuilder.");
@@ -112,10 +123,16 @@ namespace cherry::ir {
     }
 
     std::unique_ptr<IRVariableDecl> IRBuilder::lower_declaration(const ast::Declaration& decl) {
+        std::unique_ptr<IRValue> init = nullptr;
+
+        if (decl.initializer) {
+            init = lower_expr(*decl.initializer);
+        }
+
         return std::make_unique<IRVariableDecl>(
             decl.name,
             ast_type_to_ir_type(decl.explicit_type),
-            lower_expr(*decl.initializer)
+            std::move(init)
         );
     }
 
@@ -128,6 +145,32 @@ namespace cherry::ir {
 
     std::unique_ptr<IRReturn> IRBuilder::lower_return(const ast::ReturnStatement& ret) {
         return std::make_unique<IRReturn>(lower_expr(*ret.value));
+    }
+
+    std::unique_ptr<IRIf> IRBuilder::lower_if_stmt(const ast::IfStatement& if_stmt) {
+        auto condition = lower_expr(*if_stmt.condition);
+        auto then_body = lower_body(if_stmt.then_statements);
+        std::vector<std::unique_ptr<IRInstruction>> else_body;
+
+        if (!if_stmt.else_statements.empty()) {
+            else_body = lower_body(if_stmt.else_statements);
+        }
+
+        return std::make_unique<IRIf>(
+            std::move(condition),
+            std::move(then_body),
+            std::move(else_body)
+        );
+    }
+
+    std::unique_ptr<IRWhile> IRBuilder::lower_while_stmt(const ast::WhileStatement& while_stmt) {
+        auto condition = lower_expr(*while_stmt.condition);
+        auto body = lower_body(while_stmt.body);
+
+        return std::make_unique<IRWhile>(
+            std::move(condition),
+            std::move(body)
+        );
     }
 
     std::unique_ptr<IRFunction> IRBuilder::lower_function_decl(const ast::FunctionDecl& func) {
@@ -148,18 +191,40 @@ namespace cherry::ir {
         );
     }
 
-    std::unique_ptr<IRProgram> IRBuilder::lower_program(const ast::Program& program) {
+    std::unique_ptr<IRScope> IRBuilder::lower_scope(const ast::VisibilityScope& scope) {
         std::vector<std::unique_ptr<IRFunction>> functions;
+        ScopeVisibility visibility;
+
+        switch (scope.visibility) {
+            case ast::PUBLIC: visibility = PUBLIC; break;
+            case ast::PRIVATE: visibility = PRIVATE; break;
+            default: throw IRError("Unknown scope type.");
+        }
+
+        for (const auto& stmt : scope.body) {
+            if (const auto func = dynamic_cast<ast::FunctionDecl*>(stmt.get())) {
+                functions.emplace_back(lower_function_decl(*func));
+                continue;
+            }
+
+            throw IRError("Expected function declaration in scope body.");
+        }
+
+        return std::make_unique<IRScope>(visibility, std::move(functions));
+    }
+
+    std::unique_ptr<IRProgram> IRBuilder::lower_program(const ast::Program& program) {
+        std::vector<std::unique_ptr<IRScope>> scopes;
 
         for (const auto& stmt : program.stmts) {
-            if (const auto* func_decl = dynamic_cast<const ast::FunctionDecl*>(stmt.get())) {
-                functions.emplace_back(lower_function_decl(*func_decl));
+            if (const auto* scope = dynamic_cast<const ast::VisibilityScope*>(stmt.get())) {
+                scopes.emplace_back(lower_scope(*scope));
             } else {
-                throw IRError("Non-function declaration found in program body.");
+                throw IRError("Non-scope declaration found in program body.");
             }
         }
 
-        return std::make_unique<IRProgram>(std::move(functions));
+        return std::make_unique<IRProgram>(std::move(scopes));
     }
 
 } // namespace cherry::ir

@@ -16,10 +16,15 @@
 #include "cherry/ast/stmt/assignment.hpp"
 #include "cherry/ast/stmt/declaration.hpp"
 #include "cherry/ast/stmt/function_decl.hpp"
+#include "cherry/ast/stmt/if_statement.hpp"
 #include "cherry/ast/stmt/return_statement.hpp"
+#include "cherry/ast/stmt/scope_block.hpp"
+#include "cherry/ast/stmt/while_loop.hpp"
 #include "instructions/ir_assignment.hpp"
+#include "instructions/ir_if.hpp"
 #include "instructions/ir_return.hpp"
 #include "instructions/ir_variable_decl.hpp"
+#include "instructions/ir_while.hpp"
 #include "values/ir_binary.hpp"
 #include "values/ir_constant.hpp"
 #include "values/ir_function_call.hpp"
@@ -42,8 +47,11 @@ namespace cherry::ir {
         std::unique_ptr<IRVariableDecl> lower_declaration(const ast::Declaration& decl);
         std::unique_ptr<IRAssignment> lower_assignment(const ast::Assignment& assignment);
         std::unique_ptr<IRReturn> lower_return(const ast::ReturnStatement& ret);
+        std::unique_ptr<IRIf> lower_if_stmt(const ast::IfStatement& if_stmt);
+        std::unique_ptr<IRWhile> lower_while_stmt(const ast::WhileStatement& while_stmt);
 
         std::unique_ptr<IRFunction> lower_function_decl(const ast::FunctionDecl& func);
+        std::unique_ptr<IRScope> lower_scope(const ast::VisibilityScope& scope);
 
     public:
         std::unique_ptr<IRProgram> lower_program(const ast::Program& program);

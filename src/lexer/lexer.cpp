@@ -45,34 +45,6 @@ bool Lexer::match_front(const std::string& str) const {
     return std::string_view(line_source).substr(index).starts_with(str);
 }
 
-bool Lexer::match_builtin_function() {
-    const std::unordered_map<std::string, TokenType> funcs = {
-        { "print", BUILTIN_PRINT },
-        { "println", BUILTIN_PRINTLN },
-    };
-
-    std::string longest;
-    for (const auto& [key, _] : funcs) {
-        if (match_front(key) && key.length() > longest.length()) {
-            if (
-                key.length() - longest.length() == 0 ||
-                !is_alpha_or_underscore(peek(key.length() + 1))
-            ) {
-                longest = key;
-            }
-        }
-    }
-
-    if (longest.empty()) {
-        return false;
-    }
-
-    const auto type = funcs.at(longest);
-    tokens.emplace_back(type, longest);
-    advance(longest.length());
-    return true;
-}
-
 bool Lexer::match_keyword() {
     if (!is_alpha_or_underscore(peek()))
         return false;
@@ -88,6 +60,7 @@ bool Lexer::match_keyword() {
         { "if", KEYWORD_IF },
         { "else", KEYWORD_ELSE },
         { "while", KEYWORD_WHILE },
+        { "for", KEYWORD_FOR },
         { "func", KEYWORD_FUNC },
         { "return", KEYWORD_RETURN },
         { "void", KEYWORD_VOID },
@@ -125,6 +98,11 @@ bool Lexer::match_symbol() {
         {"<=", LESSER_THAN_OR_EQUAL},
         {">", GREATER_THAN},
         {"<", LESSER_THAN},
+        {"+=", PLUS_EQUAL},
+        {"-=", MINUS_EQUAL},
+        {"*=", STAR_EQUAL},
+        {"/=", SLASH_EQUAL},
+        {"%=", PERCENT_EQUAL},
         {"+", PLUS},
         {"-", MINUS},
         {"*", STAR},
@@ -255,7 +233,6 @@ void Lexer::lex_line() {
 
         if (
                match_symbol()
-            || match_builtin_function()
             || match_keyword()
             || match_number_literal()
             || match_string_literal()

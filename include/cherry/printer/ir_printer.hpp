@@ -15,6 +15,8 @@
 #include "cherry/ir/values/ir_binary.hpp"
 #include "cherry/ir/values/ir_unary.hpp"
 #include "cherry/ir/values/ir_function_call.hpp"
+#include "cherry/ir/instructions/ir_if.hpp"
+#include "cherry/ir/instructions/ir_while.hpp"
 
 namespace cherry::ir::printer {
 
@@ -75,6 +77,24 @@ namespace cherry::ir::printer {
         }
     }
 
+    inline void print_scope(
+        std::ostream& os,
+        IRScope* scope,
+        size_t indent = 0
+    ) {
+        print_indent(os, indent);
+
+        switch (scope->visibility) {
+            case PUBLIC: os << "PublicScope:" << '\n'; break;
+            case PRIVATE: os << "PrivateScope:" << '\n'; break;
+            default: os << "UnknownScope:" << '\n';
+        }
+
+        for (const auto& func : scope->functions) {
+            print_function_decl(os, func.get(), indent + 1);
+        }
+    }
+
     inline void print_program(
         std::ostream& os,
         IRProgram* program,
@@ -82,8 +102,8 @@ namespace cherry::ir::printer {
     ) {
         print_indent(os, indent);
         os << "Program:" << '\n';
-        for (const auto& func : program->functions) {
-            print_function_decl(os, func.get(), indent + 1);
+        for (const auto& scope : program->scopes) {
+            print_scope(os, scope.get(), indent + 1);
         }
     }
 
@@ -134,6 +154,50 @@ namespace cherry::ir::printer {
         os << "Value:" << '\n';
         print_value(os, ret->value, indent + 2);
         os << '\n';
+    }
+
+    inline void print_if(
+    std::ostream& os,
+    IRIf* ifstmt,
+    size_t indent
+) {
+        print_indent(os, indent);
+        os << "If:\n";
+
+        print_indent(os, indent + 1);
+        os << "Condition:\n";
+        print_value(os, ifstmt->condition, indent + 2);
+
+        print_indent(os, indent + 1);
+        os << "Then:\n";
+        for (const auto& stmt : ifstmt->then_body) {
+            print_node(os, stmt.get(), indent + 2);
+        }
+
+        print_indent(os, indent + 1);
+        os << "Else:\n";
+        for (const auto& stmt : ifstmt->else_body) {
+            print_node(os, stmt.get(), indent + 2);
+        }
+    }
+
+    inline void print_while(
+        std::ostream& os,
+        IRWhile* while_stmt,
+        size_t indent
+    ) {
+        print_indent(os, indent);
+        os << "While:\n";
+
+        print_indent(os, indent + 1);
+        os << "Condition:\n";
+        print_value(os, while_stmt->condition, indent + 2);
+
+        print_indent(os, indent + 1);
+        os << "Body:\n";
+        for (const auto& stmt : while_stmt->body) {
+            print_node(os, stmt.get(), indent + 2);
+        }
     }
 
     inline void print_function_call(
@@ -249,6 +313,10 @@ namespace cherry::ir::printer {
             print_binary(os, bin, indent);
         } else if (auto* u = dynamic_cast<IRUnary*>(node)) {
             print_unary(os, u, indent);
+        } else if (auto* ifstmt = dynamic_cast<IRIf*>(node)) {
+            print_if(os, ifstmt, indent);
+        } else if (auto* whilestmt = dynamic_cast<IRWhile*>(node)) {
+            print_while(os, whilestmt, indent);
         } else {
             print_indent(os, indent);
             os << "<Unknown IRInstruction>\n";

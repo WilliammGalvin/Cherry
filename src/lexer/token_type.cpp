@@ -21,12 +21,10 @@ namespace cherry::lexer {
             case KEYWORD_IF: return "KEYWORD_IF";
             case KEYWORD_ELSE: return "KEYWORD_ELSE";
             case KEYWORD_WHILE: return "KEYWORD_WHILE";
+            case KEYWORD_FOR: return "KEYWORD_FOR";
             case KEYWORD_FUNC: return "KEYWORD_FUNC";
             case KEYWORD_RETURN: return "KEYWORD_RETURN";
             case KEYWORD_VOID: return "KEYWORD_VOID";
-
-            case BUILTIN_PRINT: return "BUILTIN_PRINT";
-            case BUILTIN_PRINTLN: return "BUILTIN_PRINTLN";
 
             case COLON: return "COLON";
             case SEMI_COLON: return "SEMI_COLON";
@@ -49,6 +47,11 @@ namespace cherry::lexer {
             case DOUBLE_EQUAL: return "DOUBLE_EQUAL";
             case BANG: return "BANG";
             case BANG_EQUAL: return "BANG_EQUAL";
+            case PLUS_EQUAL: return "PLUS_EQUAL";
+            case MINUS_EQUAL: return "MINUS_EQUAL";
+            case STAR_EQUAL: return "STAR_EQUAL";
+            case SLASH_EQUAL: return "SLASH_EQUAL";
+            case PERCENT_EQUAL: return "PERCENT_EQUAL";
             case OR: return "OR";
             case AND: return "AND";
 
