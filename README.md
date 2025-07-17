@@ -7,6 +7,9 @@ Cherry is a high-level, multi-purpose programming language designed with both po
 
 [Documentation Plans](https://www.notion.so/Cherry-Documentation-v0-1-20fdaf69839b80a8b282c12c5b44be91?source=copy_link)
 
+### Current Progress
+Cherry has been pulled apart and put together countless times. Currently I'm refining the Cherry IR generation before lowering to LLVM. My goal is to have Cherry output formatted and clear mid IR with SSA so that I can play around with optimizations later.
+
 ---
 
 ### 🛠️ Compiler Pipeline
