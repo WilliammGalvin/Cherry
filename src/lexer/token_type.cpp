@@ -1,70 +1,120 @@
-#include "cherry/lexer/token_type.hpp"
+#include "token_type.hpp"
 
 namespace cherry::lexer {
 
-    std::string token_type_to_str(const TokenType type) {
-        switch (type) {
-            case IDENTIFIER: return "IDENTIFIER";
-            case DIRECTIVE: return "DIRECTIVE";
-            case INTEGER_LITERAL: return "INTEGER_LITERAL";
-            case FLOAT_LITERAL: return "FLOAT_LITERAL";
-            case STRING_LITERAL: return "STRING_LITERAL";
-            case BOOLEAN_LITERAL_TRUE: return "BOOLEAN_LITERAL_TRUE";
-            case BOOLEAN_LITERAL_FALSE: return "BOOLEAN_LITERAL_FALSE";
+constexpr std::string_view token_type_to_str(token_type type) noexcept {
+  switch (type) {
+  case token_type::identifier:
+    return "identifier";
+  case token_type::directive:
+    return "directive";
+  case token_type::integer_literal:
+    return "integer_literal";
+  case token_type::float_literal:
+    return "float_literal";
+  case token_type::string_literal:
+    return "string_literal";
+  case token_type::boolean_literal_true:
+    return "boolean_literal_true";
+  case token_type::boolean_literal_false:
+    return "boolean_literal_false";
+  case token_type::kw_public:
+    return "kw_public";
+  case token_type::kw_private:
+    return "kw_private";
+  case token_type::kw_const:
+    return "kw_const";
+  case token_type::kw_int:
+    return "kw_int";
+  case token_type::kw_float:
+    return "kw_float";
+  case token_type::kw_string:
+    return "kw_string";
+  case token_type::kw_bool:
+    return "kw_bool";
+  case token_type::kw_if:
+    return "kw_if";
+  case token_type::kw_else:
+    return "kw_else";
+  case token_type::kw_while:
+    return "kw_while";
+  case token_type::kw_for:
+    return "kw_for";
+  case token_type::kw_func:
+    return "kw_func";
+  case token_type::kw_return:
+    return "kw_return";
+  case token_type::kw_void:
+    return "kw_void";
+  case token_type::kw_continue:
+    return "kw_continue";
+  case token_type::kw_break:
+    return "kw_break";
+  case token_type::semi_colon:
+    return "semi_colon";
+  case token_type::colon:
+    return "colon";
+  case token_type::comma:
+    return "comma";
+  case token_type::left_paren:
+    return "left_paren";
+  case token_type::right_paren:
+    return "right_paren";
+  case token_type::left_brace:
+    return "left_brace";
+  case token_type::right_brace:
+    return "right_brace";
+  case token_type::left_bracket:
+    return "left_bracket";
+  case token_type::right_bracket:
+    return "right_bracket";
+  case token_type::greater:
+    return "greater";
+  case token_type::less:
+    return "less";
+  case token_type::greater_equal:
+    return "greater_equal";
+  case token_type::less_equal:
+    return "less_equal";
+  case token_type::plus:
+    return "plus";
+  case token_type::minus:
+    return "minus";
+  case token_type::star:
+    return "star";
+  case token_type::slash:
+    return "slash";
+  case token_type::percent:
+    return "percent";
+  case token_type::equal:
+    return "equal";
+  case token_type::plus_equal:
+    return "plus_equal";
+  case token_type::minus_equal:
+    return "minus_equal";
+  case token_type::star_equal:
+    return "star_equal";
+  case token_type::slash_equal:
+    return "slash_equal";
+  case token_type::percent_equal:
+    return "percent_equal";
+  case token_type::double_equal:
+    return "double_equal";
+  case token_type::bang_equal:
+    return "bang_equal";
+  case token_type::logical_or:
+    return "logical_or";
+  case token_type::logical_and:
+    return "logical_and";
+  case token_type::bang:
+    return "bang";
+  case token_type::line_end:
+    return "line_end";
+  case token_type::eof:
+    return "eof";
+  }
 
-            case KEYWORD_PUBLIC: return "KEYWORD_PUBLIC";
-            case KEYWORD_PRIVATE: return "KEYWORD_PRIVATE";
-            case KEYWORD_CONST: return "KEYWORD_CONST";
-            case KEYWORD_INT: return "KEYWORD_INT";
-            case KEYWORD_STRING: return "KEYWORD_STRING";
-            case KEYWORD_FLOAT: return "KEYWORD_FLOAT";
-            case KEYWORD_BOOL: return "KEYWORD_BOOL";
-            case KEYWORD_IF: return "KEYWORD_IF";
-            case KEYWORD_ELSE: return "KEYWORD_ELSE";
-            case KEYWORD_WHILE: return "KEYWORD_WHILE";
-            case KEYWORD_FOR: return "KEYWORD_FOR";
-            case KEYWORD_FUNC: return "KEYWORD_FUNC";
-            case KEYWORD_RETURN: return "KEYWORD_RETURN";
-            case KEYWORD_VOID: return "KEYWORD_VOID";
-            case KEYWORD_CONTINUE: return "KEYWORD_CONTINUE";
-            case KEYWORD_BREAK: return "KEYWORD_BREAK";
-
-            case COLON: return "COLON";
-            case SEMI_COLON: return "SEMI_COLON";
-            case COMMA: return "COMMA";
-            case LEFT_PAREN: return "LEFT_PAREN";
-            case RIGHT_PAREN: return "RIGHT_PAREN";
-            case LEFT_BRACE: return "LEFT_BRACE";
-            case RIGHT_BRACE: return "RIGHT_BRACE";
-            case LEFT_SQUARE_BRACKET: return "LEFT_SQUARE_BRACKET";
-            case RIGHT_SQUARE_BRACKET: return "RIGHT_SQUARE_BRACKET";
-
-            case GREATER_THAN: return "GREATER_THAN";
-            case LESSER_THAN: return "LESSER_THAN";
-            case GREATER_THAN_OR_EQUAL: return "GREATER_THAN_OR_EQUAL";
-            case LESSER_THAN_OR_EQUAL: return "LESSER_THAN_OR_EQUAL";
-            case PLUS: return "PLUS";
-            case MINUS: return "MINUS";
-            case STAR: return "STAR";
-            case SLASH: return "SLASH";
-            case PERCENT: return "PERCENT";
-            case EQUAL: return "EQUAL";
-            case DOUBLE_EQUAL: return "DOUBLE_EQUAL";
-            case BANG: return "BANG";
-            case BANG_EQUAL: return "BANG_EQUAL";
-            case PLUS_EQUAL: return "PLUS_EQUAL";
-            case MINUS_EQUAL: return "MINUS_EQUAL";
-            case STAR_EQUAL: return "STAR_EQUAL";
-            case SLASH_EQUAL: return "SLASH_EQUAL";
-            case PERCENT_EQUAL: return "PERCENT_EQUAL";
-            case OR: return "OR";
-            case AND: return "AND";
-
-            case LINE_END: return "LINE_END";
-            case END_OF_FILE: return "END_OF_FILE";
-
-            default: return "UNKNOWN_TOKEN";
-        }
-    }
-
+  return "unknown";
 }
+
+} // namespace cherry::lexer

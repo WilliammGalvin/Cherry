@@ -1,24 +1,21 @@
-#include "cherry/lexer/token.hpp"
+#include "token.hpp"
+#include "token_type.hpp"
 
-using namespace cherry::lexer;
+namespace cherry::lexer {
 
-Token::Token(const TokenType type, std::string value)
+token::token(token_type type, std::string value)
     : type(type), value(std::move(value)) {}
 
-Token::Token(const TokenType type)
-    : type(type) {}
+std::string token::to_str() const {
+  auto str = std::string{token_type_to_str(type)};
 
-std::string Token::to_str() const {
-    std::string str = token_type_to_str(type);
+  if (!value.empty()) {
+    str += '(';
+    str += value;
+    str += ')';
+  }
 
-    if (!value.empty()) {
-        if (type != STRING_LITERAL && type != FLOAT_LITERAL &&
-            type != INTEGER_LITERAL && value.length() == 1) {
-            str += "('" + value + "')";
-            } else {
-                str += "(" + value + ")";
-            }
-    }
-
-    return str;
+  return str;
 }
+
+} // namespace cherry::lexer

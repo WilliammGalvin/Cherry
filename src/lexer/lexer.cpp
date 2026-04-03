@@ -1,283 +1,258 @@
-#include "cherry/lexer/lexer.hpp"
-#include "cherry/lexer/lex_error.hpp"
-#include "cherry/lexer/token_type.hpp"
+#include "lexer.hpp"
+#include "token_type.hpp"
 
 #include <fstream>
-#include <iostream>
 #include <unordered_map>
 
-using namespace cherry::lexer;
+namespace cherry::lexer {
 
-static bool is_alpha_or_underscore(const char c) {
-    return ( c >= 'a' && c <= 'z' ) || ( c >= 'A' && c <= 'Z' ) || c == '_';
+static constexpr bool is_alpha_or_underscore(const char c) noexcept {
+  return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
 }
 
-static bool is_alphanumeric_or_underscore(const char c) {
-    return ( c >= 'a' && c <= 'z' ) || ( c >= 'A' && c <= 'Z' ) || ( c >= '0' && c <= '9' ) || c == '_';
+static constexpr bool is_alphanumeric_or_underscore(const char c) noexcept {
+  return is_alpha_or_underscore(c) || (c >= '0' && c <= '9');
 }
 
-char Lexer::peek(const size_t pos) const {
-    if (index + pos >= line_source.length()) return '\0';
-    return line_source.at(index + pos);
+char lexer::peek(const std::size_t pos) const noexcept {
+  if (index_ + pos >= line_source_.length())
+    return '\0';
+  return line_source_.at(index_ + pos);
 }
 
-char Lexer::consume() {
-    if (index >= line_source.length()) {
-        throw LexError("Unexpected end of input.");
-    }
+std::expected<char, lex_error> lexer::consume() noexcept {
+  if (index_ >= line_source_.length())
+    return std::unexpected{lex_error::unexpected_end_of_input};
 
-    return line_source[index++];
+  return line_source_[index_++];
 }
 
-void Lexer::advance(const size_t pos) {
-    if (index + pos > line_source.length()) {
-        throw LexError("Unexpected end of input.");
-    }
+std::expected<void, lex_error> lexer::advance(const std::size_t pos) noexcept {
+  if (index + pos > line_source.length())
+    std::unexpected{lex_error::unexpected_end_of_input};
 
-    index += pos;
+  index_ += pos;
+  return {};
 }
 
-bool Lexer::is_empty() const {
-    return index >= line_source.length();
+bool lexer::is_empty() const noexcept {
+  return index_ >= line_source_.length();
 }
 
-bool Lexer::match_front(const std::string& str) const {
-    return std::string_view(line_source).substr(index).starts_with(str);
+bool lexer::match_front(const std::string &str) const noexcept {
+  return std::string_view(line_source_).substr(index_).starts_with(str);
 }
 
-bool Lexer::match_keyword() {
-    if (!is_alpha_or_underscore(peek()))
-        return false;
-
-    const std::unordered_map<std::string, TokenType> keywords = {
-        { "public", KEYWORD_PUBLIC },
-        { "private", KEYWORD_PRIVATE },
-        { "const", KEYWORD_CONST },
-        { "continue", KEYWORD_CONTINUE },
-        { "break", KEYWORD_BREAK },
-        { "int", KEYWORD_INT },
-        { "string", KEYWORD_STRING },
-        { "float", KEYWORD_FLOAT },
-        { "bool", KEYWORD_BOOL },
-        { "if", KEYWORD_IF },
-        { "else", KEYWORD_ELSE },
-        { "while", KEYWORD_WHILE },
-        { "loop", KEYWORD_FOR },
-        { "func", KEYWORD_FUNC },
-        { "return", KEYWORD_RETURN },
-        { "void", KEYWORD_VOID },
-
-        { "true", BOOLEAN_LITERAL_TRUE },
-        { "false", BOOLEAN_LITERAL_FALSE },
-    };
-
-    std::string longest;
-    for (const auto& [key, value] : keywords) {
-        if (match_front(key) && key.length() > longest.length()) {
-            longest = key;
-        }
-    }
-
-    if (longest.empty()) {
-        return false;
-    }
-
-    advance(longest.length());
-    tokens.emplace_back(keywords.at(longest), longest);
-    return true;
-}
-
-bool Lexer::match_symbol() {
-    const std::vector<std::pair<std::string, TokenType>> symbols = {
-        {";", SEMI_COLON},
-        {":", COLON},
-        {",", COMMA},
-        {"(", LEFT_PAREN},
-        {")", RIGHT_PAREN},
-        {"{", LEFT_BRACE},
-        {"}", RIGHT_BRACE},
-        {"[", LEFT_SQUARE_BRACKET},
-        {"]", RIGHT_SQUARE_BRACKET},
-        {">=", GREATER_THAN_OR_EQUAL},
-        {"<=", LESSER_THAN_OR_EQUAL},
-        {">", GREATER_THAN},
-        {"<", LESSER_THAN},
-        {"+=", PLUS_EQUAL},
-        {"-=", MINUS_EQUAL},
-        {"*=", STAR_EQUAL},
-        {"/=", SLASH_EQUAL},
-        {"%=", PERCENT_EQUAL},
-        {"+", PLUS},
-        {"-", MINUS},
-        {"*", STAR},
-        {"/", SLASH},
-        {"%", PERCENT},
-        {"==", DOUBLE_EQUAL},
-        {"=", EQUAL},
-        {"!=", BANG_EQUAL},
-        {"!", BANG},
-        {"||", OR},
-        {"&&", AND},
-    };
-
-    for (const auto& [key, value] : symbols) {
-        if (!match_front(key)) continue;
-
-        advance(key.length());
-        tokens.emplace_back(value, key);
-        return true;
-    }
-
+bool lexer::match_keyword() {
+  if (!is_alpha_or_underscore(peek()))
     return false;
+
+  const std::unordered_map<std::string, token_type> keywords = {
+      {"bool", token_type::kw_bool},
+      {"break", token_type::kw_break},
+      {"const", token_type::kw_const},
+      {"continue", token_type::kw_continue},
+      {"else", token_type::kw_else},
+      {"false", token_type::boolean_literal_false},
+      {"float", token_type::kw_float},
+      {"func", token_type::kw_func},
+      {"if", token_type::kw_if},
+      {"int", token_type::kw_int},
+      {"loop", token_type::kw_for},
+      {"private", token_type::kw_private},
+      {"public", token_type::kw_public},
+      {"return", token_type::kw_return},
+      {"string", token_type::kw_string},
+      {"true", token_type::boolean_literal_true},
+      {"void", token_type::kw_void},
+      {"while", token_type::kw_while},
+  };
+
+  std::string longest;
+  for (const auto &[key, value] : keywords)
+    if (match_front(key) && key.length() > longest.length())
+      longest = key;
+
+  if (longest.empty())
+    return false;
+
+  advance(longest.length());
+  tokens_.emplace_back(keywords.at(longest), longest);
+  return true;
 }
 
-bool Lexer::match_identifier() {
-    std::string buffer;
+bool lexer::match_symbol() {
+  const std::vector<std::pair<std::string, token_type>> symbols = {
+      {"!=", token_type::bang_equal},    {"%", token_type::percent},
+      {"%=", token_type::percent_equal}, {"&&", token_type::logical_and},
+      {"(", token_type::left_paren},     {")", token_type::right_paren},
+      {"*", token_type::star},           {"*=", token_type::star_equal},
+      {"+", token_type::plus},           {"+=", token_type::plus_equal},
+      {",", token_type::comma},          {"-", token_type::minus},
+      {"-=", token_type::minus_equal},   {"/", token_type::slash},
+      {"/=", token_type::slash_equal},   {":", token_type::colon},
+      {";", token_type::semi_colon},     {"<", token_type::less},
+      {"<=", token_type::less_equal},    {"=", token_type::equal},
+      {"==", token_type::double_equal},  {">", token_type::greater},
+      {">=", token_type::greater_equal}, {"[", token_type::left_bracket},
+      {"]", token_type::right_bracket},  {"{", token_type::left_brace},
+      {"||", token_type::logical_or},    {"}", token_type::right_brace},
+      {"!", token_type::bang},
+  };
 
-    if (!is_alpha_or_underscore(peek()))
-        return false;
+  for (const auto &[key, value] : symbols) {
+    if (!match_front(key))
+      continue;
+
+    advance(key.length());
+    tokens_.emplace_back(value, key);
+    return true;
+  }
+
+  return false;
+}
+
+bool lexer::match_identifier() {
+  std::string buffer;
+  if (!is_alpha_or_underscore(peek()))
+    return false;
+
+  buffer += consume();
+  while (!is_empty() && is_alphanumeric_or_underscore(peek())) {
+    buffer += consume();
+  }
+
+  tokens_.emplace_back(token_type::identifier, buffer);
+  return true;
+}
+
+bool lexer::match_number_literal() {
+  std::string buffer;
+  bool is_float = false;
+
+  while (!is_empty()) {
+    if (std::isdigit(peek())) {
+      buffer += consume();
+      continue;
+    }
+
+    if (peek() == '.' && !is_float) {
+      if (buffer.empty())
+        buffer += '0';
+
+      buffer += consume();
+      is_float = true;
+      continue;
+    }
+
+    if ((peek() == 'f' || peek() == 'F') && !buffer.empty()) {
+      is_float = true;
+      advance(1);
+      break;
+    }
+
+    break;
+  }
+
+  if (!buffer.empty()) {
+    token_type type =
+        is_float ? token_type::float_literal : token_type::integer_literal;
+    tokens_.emplace_back(type, buffer);
+    return true;
+  }
+
+  return false;
+}
+
+bool lexer::match_string_literal() {
+  std::string buffer;
+
+  if (peek() != '"') {
+    return false;
+  }
+
+  advance(1);
+
+  while (!is_empty()) {
+    if (peek() == '"') {
+      advance(1);
+      tokens_.emplace_back(token_type::string_literal, buffer);
+      return true;
+    }
 
     buffer += consume();
+  }
 
-    while (!is_empty() && is_alphanumeric_or_underscore(peek())) {
-        buffer += consume();
-    }
-
-    tokens.emplace_back(IDENTIFIER, buffer);
-    return true;
+  return false;
 }
 
-bool Lexer::match_number_literal() {
-    std::string buffer;
-    bool is_float = false;
-
-    while (!is_empty()) {
-        if (std::isdigit(peek())) {
-            buffer += consume();
-            continue;
-        }
-
-        if (peek() == '.' && !is_float) {
-            if (buffer.empty())
-                buffer += '0';
-
-            buffer += consume();
-            is_float = true;
-            continue;
-        }
-
-        if ((peek() == 'f' || peek() == 'F') && !buffer.empty()) {
-            is_float = true;
-            advance(1);
-            break;
-        }
-
-        break;
-    }
-
-    if (!buffer.empty()) {
-        const TokenType type = is_float ? FLOAT_LITERAL : INTEGER_LITERAL;
-        tokens.emplace_back(type, buffer);
-        return true;
-    }
-
+bool lexer::match_directive() {
+  if (peek() != '@')
     return false;
+
+  advance();
+  std::string directive;
+  while (!is_empty() && is_alphanumeric_or_underscore(peek())) {
+    directive += consume();
+  }
+
+  tokens_.emplace_back(token_type::directive, directive);
+  return true;
 }
 
-bool Lexer::match_string_literal() {
-    std::string buffer;
-
-    if (peek() != '"') {
-        return false;
+std::expected<void, lex_error> lexer::lex_line() {
+  while (!is_empty()) {
+    if (std::isspace(peek())) {
+      advance(1);
+      continue;
     }
 
-    advance(1);
-
-    while (!is_empty()) {
-        if (peek() == '"') {
-            advance(1);
-            tokens.emplace_back(STRING_LITERAL, buffer);
-            return true;
-        }
-
-        buffer += consume();
+    if (match_front("*/")) {
+      in_block_comment_ = false;
+      advance(2);
+      continue;
     }
 
-    return false;
+    if (in_block_comment_) {
+      advance(1);
+      continue;
+    }
+
+    if (match_front("/*")) {
+      in_block_comment_ = true;
+      advance(2);
+      continue;
+    }
+
+    if (match_front("//")) {
+      line_source_.clear();
+      break;
+    }
+
+    if (match_symbol() || match_keyword() || match_number_literal() ||
+        match_string_literal() || match_identifier() || match_directive())
+      continue;
+
+    return std::unexpected{lex_error::unidentifiable_token};
+  }
+
+  return {};
 }
 
-bool Lexer::match_directive() {
-    if (peek() != '@') {
-        return false;
-    }
+std::vector<token> lexer::lex_file(std::string_view file_name) {
+  std::ifstream file(std::string{file_name});
+  if (!file.is_open())
+    throw std::runtime_error("Could not open source file.");
 
-    advance();
-    std::string directive;
+  while (std::getline(file, line_source_)) {
+    lex_line();
+    tokens_.emplace_back(token_type::line_end);
+    line_source_.clear();
+    index_ = 0;
+  }
 
-    while (!is_empty() && is_alphanumeric_or_underscore(peek())) {
-        directive += consume();
-    }
-
-    tokens.emplace_back(DIRECTIVE, directive);
-    return true;
+  tokens_.emplace_back(token_type::eof);
+  return tokens_;
 }
 
-void Lexer::lex_line() {
-    while (!is_empty()) {
-        if (std::isspace(peek())) {
-            advance(1);
-            continue;
-        }
-
-        if (match_front("*/")) {
-            in_block_comment = false;
-            advance(2);
-            continue;
-        }
-
-        if (in_block_comment) {
-            advance(1);
-            continue;
-        }
-
-        if (match_front("/*")) {
-            in_block_comment = true;
-            advance(2);
-            continue;
-        }
-
-        if (match_front("//")) {
-            line_source.clear();
-            break;
-        }
-
-        if (
-               match_symbol()
-            || match_keyword()
-            || match_number_literal()
-            || match_string_literal()
-            || match_identifier()
-            || match_directive()
-        ) continue;
-
-        throw LexError("Unable to determine token for source:\n" + line_source + "\n");
-    }
-}
-
-std::vector<Token> Lexer::lex_file(const std::string& file_name) {
-    std::ifstream file(file_name);
-
-    if (!file.is_open()) {
-        throw std::runtime_error("Could not open source file.");
-    }
-
-    while (std::getline(file, line_source)) {
-        lex_line();
-        tokens.emplace_back(LINE_END);
-        line_source.clear();
-        index = 0;
-    }
-
-    tokens.emplace_back(END_OF_FILE);
-    return tokens;
-}
+} // namespace cherry::lexer
