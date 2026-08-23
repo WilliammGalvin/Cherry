@@ -16,6 +16,7 @@ std::vector<token> lex_ok(std::string_view source) {
   EXPECT_TRUE(result.has_value())
       << "unexpected lex error: "
       << (result ? std::string{} : result.error().to_str());
+
   return result ? *result : std::vector<token>{};
 }
 
@@ -23,6 +24,7 @@ std::vector<token_type> types_of(std::string_view source) {
   std::vector<token_type> types;
   for (const auto &tok : lex_ok(source))
     types.push_back(tok.type);
+
   return types;
 }
 
@@ -80,7 +82,6 @@ TEST(Lexer, LexesBenchmarkOne) {
   EXPECT_EQ(tokens->front().type, token_type::kw_func);
   EXPECT_EQ(tokens->back().type, token_type::eof);
 
-  // i32 must lex as an identifier, not a keyword.
   bool saw_i32 = false;
   for (const auto &tok : *tokens) {
     if (tok.text == "i32") {
@@ -88,5 +89,6 @@ TEST(Lexer, LexesBenchmarkOne) {
       saw_i32 = true;
     }
   }
+
   EXPECT_TRUE(saw_i32);
 }

@@ -36,6 +36,7 @@ std::string_view lex_error_kind_to_str(lex_error_kind kind) noexcept {
   case lex_error_kind::unexpected_character:
     return "unexpected character";
   }
+
   std::unreachable();
 }
 
@@ -46,9 +47,10 @@ std::string lex_error::to_str() const {
 }
 
 char lexer::peek(std::uint32_t ahead) const noexcept {
-  const std::uint32_t at = index_ + ahead;
+  const auto at = index_ + ahead;
   if (at >= source_.size())
     return '\0';
+
   return source_[at];
 }
 
@@ -62,6 +64,7 @@ char lexer::bump() noexcept {
     ++line_;
     line_start_ = index_;
   }
+
   return c;
 }
 
@@ -80,8 +83,7 @@ lex_error lexer::error_here(lex_error_kind kind) const noexcept {
   return lex_error{kind, index_, line_, column()};
 }
 
-// Skips whitespace, line comments, and nested block comments.
-std::expected<void, lex_error> lexer::skip_trivia() {
+std::expected<void, lex_error> lexer::skip_comments_and_whitespace() {
   while (!at_end()) {
     if (is_space(peek())) {
       bump();
@@ -91,6 +93,7 @@ std::expected<void, lex_error> lexer::skip_trivia() {
     if (starts_with("//")) {
       while (!at_end() && peek() != '\n')
         bump();
+
       continue;
     }
 
@@ -98,48 +101,54 @@ std::expected<void, lex_error> lexer::skip_trivia() {
       const lex_error unterminated =
           error_here(lex_error_kind::unterminated_block_comment);
       advance(2);
+
       std::uint32_t depth = 1;
       while (depth > 0) {
         if (at_end())
           return std::unexpected{unterminated};
+
         if (starts_with("/*")) {
           advance(2);
           ++depth;
           continue;
         }
+
         if (starts_with("*/")) {
           advance(2);
           --depth;
           continue;
         }
+
         bump();
       }
+
       continue;
     }
 
     break;
   }
+
   return {};
 }
 
 void lexer::lex_identifier_or_keyword() {
-  const std::uint32_t start = index_;
-  const std::uint32_t start_line = line_;
-  const std::uint32_t start_column = column();
+  const auto start = index_;
+  const auto start_line = line_;
+  const auto start_column = column();
 
   while (!at_end() && is_ident_continue(peek()))
     bump();
 
-  const std::string_view word = source_.substr(start, index_ - start);
+  const std::string_view word{source_.substr(start, index_ - start)};
   const token_type type =
       keyword_from_text(word).value_or(token_type::identifier);
   push(type, start, start_line, start_column);
 }
 
 void lexer::lex_number() {
-  const std::uint32_t start = index_;
-  const std::uint32_t start_line = line_;
-  const std::uint32_t start_column = column();
+  const auto start = index_;
+  const auto start_line = line_;
+  const auto start_column = column();
   bool is_float = false;
 
   while (!at_end() && is_digit(peek()))
@@ -164,11 +173,11 @@ void lexer::lex_number() {
 }
 
 void lexer::lex_directive() {
-  const std::uint32_t start = index_;
-  const std::uint32_t start_line = line_;
-  const std::uint32_t start_column = column();
+  const auto start = index_;
+  const auto start_line = line_;
+  const auto start_column = column();
 
-  bump(); // '@'
+  bump(); // prefix
   while (!at_end() && is_ident_continue(peek()))
     bump();
 
@@ -176,9 +185,9 @@ void lexer::lex_directive() {
 }
 
 std::expected<void, lex_error> lexer::lex_string_literal() {
-  const std::uint32_t start = index_;
-  const std::uint32_t start_line = line_;
-  const std::uint32_t start_column = column();
+  const auto start = index_;
+  const auto start_line = line_;
+  const auto start_column = column();
   const lex_error unterminated =
       error_here(lex_error_kind::unterminated_string);
 
@@ -189,7 +198,6 @@ std::expected<void, lex_error> lexer::lex_string_literal() {
       return std::unexpected{unterminated};
 
     const char c = peek();
-
     if (c == '"') {
       bump();
       push(token_type::string_literal, start, start_line, start_column);
@@ -200,8 +208,10 @@ std::expected<void, lex_error> lexer::lex_string_literal() {
       const lex_error bad_escape =
           error_here(lex_error_kind::invalid_escape_sequence);
       bump();
+
       if (at_end())
         return std::unexpected{unterminated};
+
       switch (peek()) {
       case 'n':
       case 't':
@@ -215,6 +225,7 @@ std::expected<void, lex_error> lexer::lex_string_literal() {
       default:
         return std::unexpected{bad_escape};
       }
+
       continue;
     }
 
@@ -223,15 +234,13 @@ std::expected<void, lex_error> lexer::lex_string_literal() {
 }
 
 std::expected<void, lex_error> lexer::lex_symbol() {
-  const std::uint32_t start = index_;
-  const std::uint32_t start_line = line_;
-  const std::uint32_t start_column = column();
+  const auto start = index_;
+  const auto start_line = line_;
+  const auto start_column = column();
 
-  // Emits a two-character token when the next character matches `second`,
-  // otherwise the one-character token. This is what makes longest-match
-  // correct by construction.
   const auto pick = [&](char second, token_type two, token_type one) {
     bump();
+
     if (peek() == second) {
       bump();
       push(two, start, start_line, start_column);
@@ -279,6 +288,7 @@ std::expected<void, lex_error> lexer::lex_symbol() {
       push(token_type::logical_and, start, start_line, start_column);
       return {};
     }
+
     return std::unexpected{error_here(lex_error_kind::unexpected_character)};
   case '|':
     if (peek(1) == '|') {
@@ -286,6 +296,7 @@ std::expected<void, lex_error> lexer::lex_symbol() {
       push(token_type::logical_or, start, start_line, start_column);
       return {};
     }
+
     return std::unexpected{error_here(lex_error_kind::unexpected_character)};
   case ';':
     single(token_type::semi_colon);
@@ -329,14 +340,13 @@ lex_result lexer::lex() {
   line_start_ = 0;
 
   while (true) {
-    if (auto trivia = skip_trivia(); !trivia)
+    if (auto trivia = skip_comments_and_whitespace(); !trivia)
       return std::unexpected{trivia.error()};
 
     if (at_end())
       break;
 
     const char c = peek();
-
     if (is_ident_start(c)) {
       lex_identifier_or_keyword();
     } else if (is_digit(c)) {

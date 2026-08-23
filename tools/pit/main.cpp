@@ -1,5 +1,7 @@
 #include "common/source.hpp"
+#include "pit/ast/printer.hpp"
 #include "pit/lexer/lexer.hpp"
+#include "pit/parser/parser.hpp"
 
 #include <iostream>
 
@@ -22,8 +24,13 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  for (const auto &tok : *tokens)
-    std::cout << tok.line << ':' << tok.column << '\t' << tok.to_str() << '\n';
+  pit::parser::parser parse{*tokens};
+  const auto tree = parse.parse();
+  if (!tree) {
+    std::cerr << source->path() << ':' << tree.error().to_str() << '\n';
+    return 1;
+  }
 
+  std::cout << pit::ast::dump(*tree, *tokens);
   return 0;
 }

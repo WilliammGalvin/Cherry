@@ -38,6 +38,7 @@ source_file::position_of(std::uint32_t offset) const noexcept {
   const auto it = std::ranges::upper_bound(line_starts_, offset);
   const auto index =
       static_cast<std::uint32_t>(std::distance(line_starts_.begin(), it) - 1);
+
   return position{index + 1, offset - line_starts_[index] + 1};
 }
 
@@ -54,6 +55,7 @@ std::string_view source_file::line_text(std::uint32_t line) const noexcept {
   text = text.substr(start, end - start);
   while (!text.empty() && (text.back() == '\n' || text.back() == '\r'))
     text.remove_suffix(1);
+
   return text;
 }
 

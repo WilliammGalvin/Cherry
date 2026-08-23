@@ -13,8 +13,6 @@ FetchContent_MakeAvailable(googletest)
 
 include(GoogleTest)
 
-# Captured here so it resolves against tests/, not against whichever
-# subdirectory happens to call cherry_add_test.
 set(CHERRY_FIXTURE_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/fixtures")
 
 function(cherry_add_test name)

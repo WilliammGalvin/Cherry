@@ -11,6 +11,7 @@ std::string token::to_str() const {
     str += text;
     str += ')';
   }
+
   return str;
 }
 

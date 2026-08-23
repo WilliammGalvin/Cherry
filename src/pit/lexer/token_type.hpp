@@ -15,6 +15,7 @@ enum class token_type {
   string_literal,
   boolean_literal_true,
   boolean_literal_false,
+
   // keywords
   kw_public,
   kw_private,
@@ -27,6 +28,7 @@ enum class token_type {
   kw_return,
   kw_continue,
   kw_break,
+
   // punctuation
   semi_colon,
   colon,
@@ -38,17 +40,20 @@ enum class token_type {
   left_bracket,
   right_bracket,
   dot,
+
   // comparison
   greater,
   less,
   greater_equal,
   less_equal,
+
   // arithmetic
   plus,
   minus,
   star,
   slash,
   percent,
+
   // assignment
   equal,
   plus_equal,
@@ -56,12 +61,14 @@ enum class token_type {
   star_equal,
   slash_equal,
   percent_equal,
+
   // logical / equality
   double_equal,
   bang_equal,
   logical_or,
   logical_and,
   bang,
+
   // special
   invalid,
   eof,
@@ -170,11 +177,10 @@ constexpr std::string_view token_type_to_str(token_type type) noexcept {
   case token_type::eof:
     return "eof";
   }
+
   std::unreachable();
 }
 
-// Single source of truth for keyword spellings. The lexer scans an identifier
-// and then asks here whether that word is reserved.
 constexpr std::optional<token_type>
 keyword_from_text(std::string_view text) noexcept {
   if (text == "public")
@@ -203,6 +209,7 @@ keyword_from_text(std::string_view text) noexcept {
     return token_type::boolean_literal_true;
   if (text == "false")
     return token_type::boolean_literal_false;
+
   return std::nullopt;
 }
 
