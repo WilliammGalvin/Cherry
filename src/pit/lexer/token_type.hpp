@@ -1,11 +1,17 @@
+/// @file token_type.hpp
+/// @brief Defines the `token_type` enum class, which represents the different
+///        types of tokens that can be produced by the lexer.
 #pragma once
 
+#include <array>
 #include <optional>
 #include <string_view>
 #include <utility>
 
 namespace pit::lexer {
 
+/// @brief Represents the different types of tokens that can be produced by the
+///        lexer.
 enum class token_type {
   // literals
   identifier,
@@ -74,6 +80,47 @@ enum class token_type {
   eof,
 };
 
+using keyword_entry =
+    std::pair<std::string_view,
+              token_type>; ///< Represents a mapping between a keyword string
+                           ///< and its corresponding token_type.
+
+/// @brief A constexpr array of keyword_entry pairs that maps recognized
+///        keywords to their corresponding token_type values.
+inline constexpr std::array keyword_table = {
+    keyword_entry{"public", token_type::kw_public},
+    keyword_entry{"private", token_type::kw_private},
+    keyword_entry{"const", token_type::kw_const},
+    keyword_entry{"if", token_type::kw_if},
+    keyword_entry{"else", token_type::kw_else},
+    keyword_entry{"while", token_type::kw_while},
+    keyword_entry{"for", token_type::kw_for},
+    keyword_entry{"fn", token_type::kw_func},
+    keyword_entry{"return", token_type::kw_return},
+    keyword_entry{"continue", token_type::kw_continue},
+    keyword_entry{"break", token_type::kw_break},
+    keyword_entry{"true", token_type::boolean_literal_true},
+    keyword_entry{"false", token_type::boolean_literal_false}};
+
+/// @brief Converts a string_view to its corresponding token_type if it is a
+///        recognized keyword.
+/// @param text The string_view to convert.
+/// @return An optional containing the corresponding token_type if the
+///         string_view is a recognized keyword, or std::nullopt if it is not.
+constexpr std::optional<token_type>
+keyword_from_text(std::string_view text) noexcept {
+  for (const auto &[keyword, type] : keyword_table) {
+    if (text == keyword)
+      return type;
+  }
+
+  return std::nullopt;
+}
+
+/// @brief Converts a token_type to its string representation.
+/// @param type The token_type to convert.
+/// @return A string_view representing the string representation of the
+///         token_type.
 constexpr std::string_view token_type_to_str(token_type type) noexcept {
   switch (type) {
   case token_type::identifier:
@@ -179,38 +226,6 @@ constexpr std::string_view token_type_to_str(token_type type) noexcept {
   }
 
   std::unreachable();
-}
-
-constexpr std::optional<token_type>
-keyword_from_text(std::string_view text) noexcept {
-  if (text == "public")
-    return token_type::kw_public;
-  if (text == "private")
-    return token_type::kw_private;
-  if (text == "const")
-    return token_type::kw_const;
-  if (text == "if")
-    return token_type::kw_if;
-  if (text == "else")
-    return token_type::kw_else;
-  if (text == "while")
-    return token_type::kw_while;
-  if (text == "for")
-    return token_type::kw_for;
-  if (text == "fn")
-    return token_type::kw_func;
-  if (text == "return")
-    return token_type::kw_return;
-  if (text == "continue")
-    return token_type::kw_continue;
-  if (text == "break")
-    return token_type::kw_break;
-  if (text == "true")
-    return token_type::boolean_literal_true;
-  if (text == "false")
-    return token_type::boolean_literal_false;
-
-  return std::nullopt;
 }
 
 } // namespace pit::lexer

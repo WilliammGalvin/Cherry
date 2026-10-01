@@ -1,218 +1,132 @@
 #include "pit/lexer/lexer.hpp"
+#include "pit/lexer/char_class.hpp"
 #include "pit/lexer/token_type.hpp"
 
-#include <sstream>
-#include <utility>
+#include <unistd.h>
 
 namespace pit::lexer {
 
-namespace {
+std::expected<std::vector<token>, lex_error> lexer::lex() {
+  _reset();
 
-constexpr bool is_ident_start(char c) noexcept {
-  return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
-}
+  while (true) {
+    const auto trivia = _skip_comments_and_whitespace();
+    if (!trivia)
+      return std::unexpected{trivia.error()};
 
-constexpr bool is_digit(char c) noexcept { return c >= '0' && c <= '9'; }
+    if (_cursor.at_end())
+      break;
 
-constexpr bool is_ident_continue(char c) noexcept {
-  return is_ident_start(c) || is_digit(c);
-}
+    const auto c = _cursor.peek();
 
-constexpr bool is_space(char c) noexcept {
-  return c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\v' ||
-         c == '\f';
-}
-
-} // namespace
-
-std::string_view lex_error_kind_to_str(lex_error_kind kind) noexcept {
-  switch (kind) {
-  case lex_error_kind::unterminated_string:
-    return "unterminated string literal";
-  case lex_error_kind::unterminated_block_comment:
-    return "unterminated block comment";
-  case lex_error_kind::invalid_escape_sequence:
-    return "invalid escape sequence";
-  case lex_error_kind::unexpected_character:
-    return "unexpected character";
-  }
-
-  std::unreachable();
-}
-
-std::string lex_error::to_str() const {
-  std::ostringstream out;
-  out << line << ':' << column << ": error: " << lex_error_kind_to_str(kind);
-  return out.str();
-}
-
-char lexer::peek(std::uint32_t ahead) const noexcept {
-  const auto at = index_ + ahead;
-  if (at >= source_.size())
-    return '\0';
-
-  return source_[at];
-}
-
-bool lexer::starts_with(std::string_view text) const noexcept {
-  return source_.substr(index_).starts_with(text);
-}
-
-char lexer::bump() noexcept {
-  const char c = source_[index_++];
-  if (c == '\n') {
-    ++line_;
-    line_start_ = index_;
-  }
-
-  return c;
-}
-
-void lexer::advance(std::uint32_t count) noexcept {
-  for (std::uint32_t i = 0; i < count && !at_end(); ++i)
-    bump();
-}
-
-void lexer::push(token_type type, std::uint32_t start, std::uint32_t start_line,
-                 std::uint32_t start_column) {
-  tokens_.emplace_back(type, source_.substr(start, index_ - start), start,
-                       start_line, start_column);
-}
-
-lex_error lexer::error_here(lex_error_kind kind) const noexcept {
-  return lex_error{kind, index_, line_, column()};
-}
-
-std::expected<void, lex_error> lexer::skip_comments_and_whitespace() {
-  while (!at_end()) {
-    if (is_space(peek())) {
-      bump();
+    if (char_class::is_ident_start(c)) {
+      const auto result = _lex_identifier_or_keyword();
+      if (!result)
+        return std::unexpected{result.error()};
       continue;
     }
 
-    if (starts_with("//")) {
-      while (!at_end() && peek() != '\n')
-        bump();
-
+    if (char_class::is_digit(c)) {
+      const auto result = _lex_number();
+      if (!result)
+        return std::unexpected{result.error()};
       continue;
     }
 
-    if (starts_with("/*")) {
-      const lex_error unterminated =
-          error_here(lex_error_kind::unterminated_block_comment);
-      advance(2);
-
-      std::uint32_t depth = 1;
-      while (depth > 0) {
-        if (at_end())
-          return std::unexpected{unterminated};
-
-        if (starts_with("/*")) {
-          advance(2);
-          ++depth;
-          continue;
-        }
-
-        if (starts_with("*/")) {
-          advance(2);
-          --depth;
-          continue;
-        }
-
-        bump();
-      }
-
+    if (c == '"') {
+      const auto result = _lex_string_literal();
+      if (!result)
+        return std::unexpected{result.error()};
       continue;
     }
 
-    break;
+    if (c == '@') {
+      const auto result = _lex_directive();
+      if (!result)
+        return std::unexpected{result.error()};
+      continue;
+    }
+
+    const auto result = _lex_symbol();
+    if (!result)
+      return std::unexpected{result.error()};
   }
 
+  _push_token(token_type::eof);
+  return _tokens;
+}
+
+lexer::lex_result lexer::_lex_identifier_or_keyword() {
+  const auto start = _cursor.offset();
+  _cursor.advance(); // first character
+  _cursor.advance_while(char_class::is_ident_continue);
+
+  const auto word = _cursor.slice(start, _cursor.offset());
+  const auto type = keyword_from_text(word).value_or(token_type::identifier);
+  _push_token(type, start);
   return {};
 }
 
-void lexer::lex_identifier_or_keyword() {
-  const auto start = index_;
-  const auto start_line = line_;
-  const auto start_column = column();
-
-  while (!at_end() && is_ident_continue(peek()))
-    bump();
-
-  const std::string_view word{source_.substr(start, index_ - start)};
-  const token_type type =
-      keyword_from_text(word).value_or(token_type::identifier);
-  push(type, start, start_line, start_column);
-}
-
-void lexer::lex_number() {
-  const auto start = index_;
-  const auto start_line = line_;
-  const auto start_column = column();
+lexer::lex_result lexer::_lex_number() {
   bool is_float = false;
+  const auto start = _cursor.offset();
+  _cursor.advance_while(char_class::is_digit);
 
-  while (!at_end() && is_digit(peek()))
-    bump();
-
-  // A '.' only belongs to the number when a digit follows it, so that `1.foo`
-  // lexes as integer, dot, identifier rather than a malformed float.
-  if (peek() == '.' && is_digit(peek(1))) {
+  if (_cursor.peek() == '.' && _cursor.is_peek(char_class::is_digit, 1)) {
     is_float = true;
-    bump();
-    while (!at_end() && is_digit(peek()))
-      bump();
+    _cursor.advance(); // decimal point
+    _cursor.advance_while(char_class::is_digit);
   }
 
-  if (peek() == 'f' || peek() == 'F') {
+  if (_cursor.peek() == 'f' || _cursor.peek() == 'F') {
     is_float = true;
-    bump();
+    _cursor.advance(); // float suffix
   }
 
-  push(is_float ? token_type::float_literal : token_type::integer_literal,
-       start, start_line, start_column);
+  const auto num_type =
+      is_float ? token_type::float_literal : token_type::integer_literal;
+  _push_token(num_type, start);
+  return {};
 }
 
-void lexer::lex_directive() {
-  const auto start = index_;
-  const auto start_line = line_;
-  const auto start_column = column();
+lexer::lex_result lexer::_lex_directive() {
+  _cursor.advance(); // prefix
 
-  bump(); // prefix
-  while (!at_end() && is_ident_continue(peek()))
-    bump();
-
-  push(token_type::directive, start, start_line, start_column);
+  const auto start = _cursor.offset();
+  _cursor.advance_while(char_class::is_ident_continue);
+  _push_token(token_type::directive, start);
+  return {};
 }
 
-std::expected<void, lex_error> lexer::lex_string_literal() {
-  const auto start = index_;
-  const auto start_line = line_;
-  const auto start_column = column();
+lexer::lex_result lexer::_lex_string_literal() {
   const lex_error unterminated =
-      error_here(lex_error_kind::unterminated_string);
+      _error_here(lex_error_kind::unterminated_string);
 
-  bump(); // opening quote
+  _cursor.advance(); // opening quote
+  const auto start = _cursor.offset();
 
   while (true) {
-    if (at_end() || peek() == '\n')
+    if (_cursor.at_end() || _cursor.peek() == '\n')
       return std::unexpected{unterminated};
 
-    const char c = peek();
+    const char c = _cursor.peek();
     if (c == '"') {
-      bump();
-      push(token_type::string_literal, start, start_line, start_column);
+      const auto stop = _cursor.offset();
+      _cursor.advance(); // closing quote
+      _push_token(token_type::string_literal, start, stop);
       return {};
     }
 
     if (c == '\\') {
       const lex_error bad_escape =
-          error_here(lex_error_kind::invalid_escape_sequence);
-      bump();
+          _error_here(lex_error_kind::invalid_escape_sequence);
 
-      if (at_end())
+      _cursor.advance(); // backslash
+
+      if (_cursor.at_end())
         return std::unexpected{unterminated};
 
-      switch (peek()) {
+      switch (_cursor.peek()) {
       case 'n':
       case 't':
       case 'r':
@@ -220,8 +134,9 @@ std::expected<void, lex_error> lexer::lex_string_literal() {
       case '\\':
       case '\'':
       case '"':
-        bump();
+        _cursor.advance();
         break;
+
       default:
         return std::unexpected{bad_escape};
       }
@@ -229,32 +144,29 @@ std::expected<void, lex_error> lexer::lex_string_literal() {
       continue;
     }
 
-    bump();
+    _cursor.advance();
   }
 }
 
-std::expected<void, lex_error> lexer::lex_symbol() {
-  const auto start = index_;
-  const auto start_line = line_;
-  const auto start_column = column();
-
+lexer::lex_result lexer::_lex_symbol() {
   const auto pick = [&](char second, token_type two, token_type one) {
-    bump();
+    _cursor.advance();
 
-    if (peek() == second) {
-      bump();
-      push(two, start, start_line, start_column);
-    } else {
-      push(one, start, start_line, start_column);
+    if (_cursor.peek() == second) {
+      _cursor.advance();
+      _push_token(two);
+      return;
     }
+
+    _push_token(one);
   };
 
   const auto single = [&](token_type type) {
-    bump();
-    push(type, start, start_line, start_column);
+    _cursor.advance();
+    _push_token(type);
   };
 
-  switch (peek()) {
+  switch (_cursor.peek()) {
   case '+':
     pick('=', token_type::plus_equal, token_type::plus);
     return {};
@@ -282,22 +194,24 @@ std::expected<void, lex_error> lexer::lex_symbol() {
   case '>':
     pick('=', token_type::greater_equal, token_type::greater);
     return {};
+
   case '&':
-    if (peek(1) == '&') {
-      advance(2);
-      push(token_type::logical_and, start, start_line, start_column);
+    if (_cursor.peek(1) == '&') {
+      _cursor.advance(2);
+      _push_token(token_type::logical_and);
       return {};
     }
 
-    return std::unexpected{error_here(lex_error_kind::unexpected_character)};
+    return std::unexpected{_error_here(lex_error_kind::unexpected_character)};
+
   case '|':
-    if (peek(1) == '|') {
-      advance(2);
-      push(token_type::logical_or, start, start_line, start_column);
+    if (_cursor.peek(1) == '|') {
+      _cursor.advance(2);
+      _push_token(token_type::logical_or);
       return {};
     }
 
-    return std::unexpected{error_here(lex_error_kind::unexpected_character)};
+    return std::unexpected{_error_here(lex_error_kind::unexpected_character)};
   case ';':
     single(token_type::semi_colon);
     return {};
@@ -328,43 +242,51 @@ std::expected<void, lex_error> lexer::lex_symbol() {
   case ']':
     single(token_type::right_bracket);
     return {};
+
   default:
-    return std::unexpected{error_here(lex_error_kind::unexpected_character)};
+    return std::unexpected{_error_here(lex_error_kind::unexpected_character)};
   }
 }
 
-lex_result lexer::lex() {
-  tokens_.clear();
-  index_ = 0;
-  line_ = 1;
-  line_start_ = 0;
+lexer::lex_result lexer::_skip_comments_and_whitespace() {
+  while (!_cursor.at_end()) {
+    _cursor.advance_while(char_class::is_whitespace);
 
-  while (true) {
-    if (auto trivia = skip_comments_and_whitespace(); !trivia)
-      return std::unexpected{trivia.error()};
+    if (_cursor.starts_with("//"))
+      _cursor.advance_while([](char c) { return c != '\n'; });
 
-    if (at_end())
-      break;
+    if (_cursor.starts_with("/*")) {
+      const lex_error unterminated =
+          _error_here(lex_error_kind::unterminated_block_comment);
+      _cursor.advance(2);
 
-    const char c = peek();
-    if (is_ident_start(c)) {
-      lex_identifier_or_keyword();
-    } else if (is_digit(c)) {
-      lex_number();
-    } else if (c == '"') {
-      if (auto result = lex_string_literal(); !result)
-        return std::unexpected{result.error()};
-    } else if (c == '@') {
-      lex_directive();
-    } else {
-      if (auto result = lex_symbol(); !result)
-        return std::unexpected{result.error()};
+      int depth = 1;
+      while (depth > 0) {
+        if (_cursor.at_end())
+          return std::unexpected{unterminated};
+
+        if (_cursor.starts_with("/*")) {
+          _cursor.advance(2);
+          ++depth;
+          continue;
+        }
+
+        if (_cursor.starts_with("*/")) {
+          _cursor.advance(2);
+          --depth;
+          continue;
+        }
+
+        _cursor.advance();
+      }
+
+      continue;
     }
+
+    break;
   }
 
-  tokens_.emplace_back(token_type::eof, std::string_view{}, index_, line_,
-                       column());
-  return std::move(tokens_);
+  return {};
 }
 
 } // namespace pit::lexer

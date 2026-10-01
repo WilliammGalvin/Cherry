@@ -1,70 +1,129 @@
+/// @file lexer.hpp
+/// @brief Contains the definition of the lexer class, which is responsible for
+///        tokenizing the source code into a sequence of tokens.
 #pragma once
 
-#include "pit/lexer/token.hpp"
-
-#include <cstdint>
 #include <expected>
-#include <string>
 #include <string_view>
 #include <vector>
 
+#include "pit/lexer/lex_error.hpp"
+#include "pit/lexer/source_cursor.hpp"
+#include "pit/lexer/token.hpp"
+
 namespace pit::lexer {
 
-enum class lex_error_kind {
-  unterminated_string,
-  unterminated_block_comment,
-  invalid_escape_sequence,
-  unexpected_character,
-};
+/// @brief Represents the result of the lexing process, which can either be a
+///        vector of tokens or a lex_error.
 
-std::string_view lex_error_kind_to_str(lex_error_kind kind) noexcept;
-
-struct lex_error {
-  lex_error_kind kind;
-  std::uint32_t offset;
-  std::uint32_t line;
-  std::uint32_t column;
-
-  std::string to_str() const;
-};
-
-using lex_result = std::expected<std::vector<token>, lex_error>;
-
+/// @brief The lexer class is responsible for tokenizing the source code into a
+///        sequence of tokens. It processes the input source code and produces
+///        a vector of tokens or a lex_error if an error occurs during the
+///        lexing process.
 class lexer {
 public:
-  explicit lexer(std::string_view source) noexcept : source_(source) {}
+  /// @brief Constructs a lexer object with the given source code.
+  /// @param source The source code to be tokenized.
+  explicit lexer(std::string_view source) noexcept : _cursor(source) {}
 
-  lex_result lex();
+  /// @brief Tokenizes the source code and returns a lex_result, which can be
+  ///        either a vector of tokens or a lex_error if an error occurs during
+  ///        the lexing process.
+  /// @return A lex_result containing either a vector of tokens or a lex_error.
+  std::expected<std::vector<token>, lex_error> lex();
 
 private:
-  std::string_view source_;
-  std::vector<token> tokens_{};
-  std::uint32_t index_{0};
-  std::uint32_t line_{1};
-  std::uint32_t line_start_{0};
+  using lex_result = std::expected<void, lex_error>;
+  using position_type = source_cursor::position_type;
 
-  bool at_end() const noexcept { return index_ >= source_.size(); }
+  source_cursor _cursor;
+  std::vector<token> _tokens{};
 
-  char peek(std::uint32_t ahead = 0) const noexcept;
+  /// @brief Lexes an identifier or keyword from the source code. If an error
+  ///        occurs during this process, it returns a lex_error.
+  /// @return A lex_result indicating success or failure.
+  lex_result _lex_identifier_or_keyword();
 
-  bool starts_with(std::string_view text) const noexcept;
+  /// @brief Lexes a number from the source code. If an error occurs during this
+  ///        process, it returns a lex_error.
+  /// @return A lex_result indicating success or failure.
+  lex_result _lex_number();
 
-  std::uint32_t column() const noexcept { return index_ - line_start_ + 1; }
+  /// @brief Lexes a directive from the source code. If an error occurs during
+  ///        this process, it returns a lex_error.
+  /// @return A lex_result indicating success or failure.
+  lex_result _lex_directive();
 
-  char bump() noexcept;
-  void advance(std::uint32_t count) noexcept;
+  /// @brief Lexes a string literal from the source code. If an error occurs
+  ///        during this process, it returns a lex_error.
+  /// @return A lex_result indicating success or failure.
+  lex_result _lex_string_literal();
 
-  void push(token_type type, std::uint32_t start, std::uint32_t start_line,
-            std::uint32_t start_column);
-  [[nodiscard]] lex_error error_here(lex_error_kind kind) const noexcept;
+  /// @brief Lexes a symbol (operator or punctuation) from the source code. If
+  /// an
+  ///        error occurs during this process, it returns a lex_error.
+  /// @return A lex_result indicating success or failure.
+  lex_result _lex_symbol();
 
-  std::expected<void, lex_error> skip_comments_and_whitespace();
+  /// @brief Pushes a token of the specified type onto the token vector. The
+  ///        token is created using the specified contents and the current
+  ///        position of the source cursor.
+  /// @param type The type of the token to be pushed.
+  /// @param contents The contents of the token to be pushed.
+  void _push_token(token_type type, std::string_view contents) {
+    _tokens.emplace_back(type, contents, _cursor.offset(), _cursor.line(),
+                         _cursor.column());
+  }
 
-  void lex_identifier_or_keyword();
-  void lex_number();
-  void lex_directive();
-  std::expected<void, lex_error> lex_string_literal();
-  std::expected<void, lex_error> lex_symbol();
+  /// @brief Pushes a token of the specified type onto the token vector. The
+  ///        token is created using the specified start and stop positions in
+  ///        the source code.
+  /// @param type The type of the token to be pushed.
+  /// @param start The starting position of the token in the source code.
+  /// @param stop The stopping position of the token in the source code.
+  void _push_token(token_type type, position_type start, position_type stop) {
+    const auto contents = _cursor.slice(start, stop);
+    _tokens.emplace_back(type, contents, start, _cursor.line_at(start),
+                         _cursor.column_at(start));
+  }
+
+  /// @brief Pushes a token of the specified type onto the token vector. The
+  ///        token is created using the specified start position and the current
+  ///        position of the source cursor.
+  /// @param type The type of the token to be pushed.
+  /// @param start The starting position of the token in the source code.
+  void _push_token(token_type type, position_type start) {
+    _push_token(type, start, _cursor.offset());
+  }
+
+  /// @brief Pushes a token of the specified type onto the token vector. The
+  ///        token is created using the current position of the source cursor.
+  /// @param type The type of the token to be pushed.
+  void _push_token(token_type type) {
+    _push_token(type, _cursor.offset(), _cursor.offset());
+  }
+
+  /// @brief Resets the lexer to its initial state, clearing the token vector
+  ///        and resetting the source cursor to the beginning of the source
+  ///        code.
+  void _reset() noexcept {
+    _cursor.reset();
+    _tokens.clear();
+  }
+
+  /// @brief Skips comments and whitespace in the source code. If an error
+  ///        occurs during this process, it returns a lex_error.
+  /// @return An expected<void, lex_error> indicating success or failure.
+  lex_result _skip_comments_and_whitespace();
+
+  /// @brief Creates a lex_error at the current cursor position with the given
+  ///        lex_error_kind.
+  /// @param kind The kind of lexical error to create.
+  /// @return A lex_error object representing the lexical error at the current
+  ///         cursor position.
+  lex_error _error_here(lex_error_kind kind) const noexcept {
+    return lex_error{kind, _cursor.offset(), _cursor.line(), _cursor.column()};
+  }
 };
 
 } // namespace pit::lexer
