@@ -1,0 +1,35 @@
+@import std.io;
+@import std.text;
+@import std.core;
+
+fn parse_uint(s: text.string_view): ?u64 {
+  if (s.length == 0)
+    return none;
+
+  let total: u64 = 0;
+  let i: usize = 0;
+  while (i < s.length) {
+    let d: u8 = core.char.digit_value(s.get(i), 10) ?? return none;
+    total = total * 10 + (d as u64);
+    i += 1;
+  }
+
+  return total;
+}
+
+fn main(): !void {
+  let sum: 64 = 0;
+  while (true) {
+    let next: ?text.string = try io.read_line(io.stdin());
+    let line: text.string = next ?? break;
+    defer line.free();
+
+    if (line.is_empty())
+      continue;
+
+    sum += parse_uint(line.as_view()) ?? return error.invalid_input;
+  }
+
+  try io.print_uint(sum);
+  try io.println("");
+}
