@@ -1,0 +1,124 @@
+@import alloc.heap;
+@import core.slice.{ slice };
+@import core.memory;
+@import core.error.{ panic };
+
+const MIN_CAPACITY: usize = 4;
+
+struct vector<T> {
+  data: T*;
+  length: usize;
+  capacity: usize;
+}
+
+impl<T> vector<T> {
+  fn grow(self: vector<T>*): !void {
+    let new_cap: usize = MIN_CAPACITY;
+    if (self.capacity != 0) {
+      new_cap = self.capacity * 2;
+      if (new_cap < self.capacity)
+        return error.out_of_memory;
+    }
+
+    try self.reserve(new_cap);
+  }
+
+  public {
+    fn new(): vector<T> {
+      return vector<T>{ data: 0 as T*, length: 0, capacity: 0 };
+    }
+
+    fn with_capacity(n: usize): !vector<T> {
+      let v: vector<T> = vector<T>.new();
+      try v.reserve(n);
+      return v;
+    }
+
+    fn size(self): usize {
+      return self.length;
+    }
+
+    fn is_empty(self): bool {
+      return self.length == 0;
+    }
+
+    fn get(self, i: usize): T {
+      if (i >= self.length)
+        panic("vector index out of bounds");
+
+      return *(self.data + i);
+    }
+
+    fn at(self, i: usize): ?T {
+      if (i >= self.length)
+        return none;
+
+      return *(self.data + i);
+    }
+
+    fn set(self, i: usize, value: T): void {
+      if (i >= self.length)
+        panic("vector index out of bounds");
+
+      *(self.data + i) = value;
+    }
+
+    fn as_slice(self): slice<T> {
+      return slice<T>{ data: self.data, length: self.length };
+    }
+
+    fn reserve(self: vector<T>*, n: usize): !void {
+      if (n <= self.capacity)
+        return;
+
+      self.data = try heap.resize<T>(self.data, n);
+      self.capacity = n;
+    }
+
+    fn push(self: vector<T>*, value: T): !void {
+      if (self.length == self.capacity)
+        try self.grow();
+
+      *(self.data + self.length) = value;
+      self.length += 1;
+    }
+
+    fn pop(self: vector<T>*): ?T {
+      if (self.length == 0)
+        return none;
+
+      self.length -= 1;
+      return *(self.data + self.length);
+    }
+
+    fn extend(self: vector<T>*, items: slice<T>): !void {
+      let needed: usize = self.length + items.length;
+      if (needed < self.length)
+        return error.out_of_memory;
+
+      if (needed > self.capacity) {
+        let target: usize = needed;
+        let doubled: usize = self.capacity * 2;
+        if (doubled >= self.capacity && doubled > needed)
+          target = doubled;
+
+        try self.reserve(target);
+      }
+
+      let dst: slice<T> = slice<T>{ data: self.data + self.length, length: items.length };
+      memory.copy<T>(dst, items);
+      self.length = needed;
+    }
+
+    fn clear(self: vector<T>*): void {
+      self.length = 0;
+    }
+
+    fn free(self: vector<T>*): void {
+      heap.free<T>(self.data);
+      self.data = 0 as T*;
+      self.length = 0;
+      self.capacity = 0;
+    }
+  }
+}

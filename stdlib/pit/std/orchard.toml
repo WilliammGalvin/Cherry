@@ -1,0 +1,13 @@
+[package]
+name = "std"
+version = "0.1.0"
+edition = "2026"
+
+[dependencies]
+# none
+
+[native]
+link = []
+
+[build]
+optimize = "speed"

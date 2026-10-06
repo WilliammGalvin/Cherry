@@ -1,0 +1,64 @@
+fn in_range(c: u8, low: u8, high: u8): bool {
+  return c >= low && c <= high;
+}
+
+public {
+  fn is_digit(c: u8): bool {
+    return in_range(c, '0', '9');
+  }
+
+  fn is_lower(c: u8): bool {
+    return in_range(c, 'a', 'z');
+  }
+
+  fn is_upper(c: u8): bool {
+    return in_range(c, 'A', 'Z');
+  }
+
+  fn is_alpha(c: u8): bool {
+    return is_lower(c) || is_upper(c);
+  }
+
+  fn is_alnum(c: u8): bool {
+    return is_alpha(c) || is_digit(c);
+  }
+
+  fn is_space(c: u8): bool {
+    return c == ' ' || in_range(c, 9, 13);
+  }
+
+  fn is_hex_digit(c: u8): bool {
+    return is_digit(c) || in_range(c, 'a', 'f') || in_range(c, 'A', 'F');
+  }
+
+  fn to_upper(c: u8): u8 {
+    if (is_lower(c))
+      return c - ('a' - 'A');
+
+    return c;
+  }
+
+  fn to_lower(c: u8): u8 {
+    if (is_upper(c))
+      return c + ('a' - 'A');
+
+    return c;
+  }
+
+  fn digit_value(c: u8, base: u8): ?u8 {
+    let v: u8 = 0;
+    if (is_digit(c))
+      v = c - '0';
+    else if (is_lower(c))
+      v = c - 'a' + 10;
+    else if (is_upper(c))
+      v = c - 'A' + 10;
+    else
+      return none;
+
+    if (v >= base)
+      return none;
+
+    return v;
+  }
+}

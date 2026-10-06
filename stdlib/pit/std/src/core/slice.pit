@@ -1,0 +1,54 @@
+@import core.error.{ panic };
+
+struct slice<T> {
+  data: T*;
+  length: usize;
+}
+
+impl<T> slice<T> {
+  public {
+    fn size(self): usize {
+      return self.length;
+    }
+
+    fn is_empty(self): bool {
+      return self.length == 0;
+    }
+
+    fn get(self, i: usize): ?T {
+      if (i >= self.length)
+        return none;
+
+      return *(self.data + i);
+    }
+
+    fn get_or(self, i: usize, fallback: T): T {
+      return self.at(i) ?? fallback;
+    }
+
+    fn set(self, i: usize, value: T): void {
+      if (i >= self.length)
+        panic("slice index is out of bounds");
+      
+      *(self.data + i) = value;
+    }
+
+    fn sub(self, start: usize, end: usize): slice<T> {
+      if (start > end || end > self.length)
+        panic("slice range out of bounds");
+
+      return slice<T>{ data: self.data + start, length: end - start };
+    }
+
+    fn first(self): ?T {
+      return self.get(0);
+    }
+
+    fn last(self): ?T {
+      if (self.length == 0)
+        return none;
+
+      return *(self.data + (self.length - 1));
+    }
+  }
+}

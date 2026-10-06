@@ -1,0 +1,24 @@
+public {
+  const STDIN: i32 = 0;
+  const STDOUT: i32 = 1;
+  const STDERR: i32 = 2;
+
+  extern {
+    fn write(fd: i32, buf: u8*, len: usize): isize;
+    fn read(fd: i32, buf: u8*, len: usize): isize;
+
+    fn malloc(size: usize): u8*;
+    fn realloc(ptr: u8*, size: usize): u8*;
+    fn free(ptr: u8*): void;
+
+    fn memcpy(dst: u8*, src: u8*, len: usize): u8*;
+    fn memmove(dst: u8*, src: u8*, len: usize): u8*;
+    fn memset(dst: u8*, value: i32, len: usize): u8*;
+    fn memcmp(dst: u8*, b: u8*, len: usize): i32;
+
+    fn strlen(s: u8*): usize;
+
+    fn abort(): void;
+    fn exit(code: i32): void;
+  }
+}

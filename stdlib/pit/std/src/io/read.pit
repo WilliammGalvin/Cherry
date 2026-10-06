@@ -1,0 +1,60 @@
+@import core.slice.{ slice };
+@import text.string.{ string };
+@import io.stream.{ stream };
+
+public {
+  fn read_byte(input: stream): !?u8 {
+    let b: u8 = 0;
+    let n: usize = try input.read(slice<u8>{ data: &b, length: 1 });
+    if (n == 0)
+      return none;
+
+    return b;
+  }
+
+  fn read_line(input: stream): !?string {
+    let line: string = string.new();
+    errdefer line.free();
+
+    let got_any: bool = false;
+    while (true) {
+      let next: ?u8 = try read_byte(input);
+      if (next) |b| {
+        got_any = true;
+        if (b == '\n')
+          break;
+
+        try line.push(b);
+      } else {
+        break;
+      }
+    }
+
+    if (!got_any) {
+      line.free();
+      return none;
+    }
+
+    let n: usize = line.size();
+    if (n > 0 && line.get(n - 1) == '\r')
+      line.truncate(n - 1);
+
+    return line;
+  }
+
+  fn read_all(input: stream): !string {
+    let out: string = string.new();
+    errdefer out.free();
+
+    let buf: u8[4096];
+    while (true) {
+      let n: usize = try input.read(slice<u8>{ data: &buf[0], length: 4096 });
+      if (n == 0)
+        break;
+
+      try out.append(slice<u8>{ data: &buf[0], length: n });
+    }
+
+    return out;
+  }
+}

@@ -1,0 +1,169 @@
+@import collections.vector.{ vector };
+@import core.slice.{ slice };
+@import core.memory;
+
+public {
+  type string_view = slice<u8>;
+}
+
+struct string {
+  bytes: vector<u8>;
+}
+
+impl string {
+  fn ensure(self: string*, extra: usize): !void {
+    let needed: usize = self.bytes.length + extra;
+    if (needed < self.bytes.length)
+      return error.out_of_memory;
+
+    needed += 1;
+    if (needed == 0)
+      return error.out_of_memory;
+
+    if (needed <= self.bytes.capacity)
+      return;
+
+    let target: usize = needed;
+    let doubled: usize = self.bytes.capacity * 2;
+    if (doubled >= self.bytes.capacity && doubled > needed)
+      target = doubled;
+
+    try self.bytes.reserve(target);
+    *(self.bytes.data + self.bytes.length) = 0;
+  }
+
+  public {
+    fn new(): string {
+      return string{ bytes: vector<u8>.new() };
+    }
+
+    fn with_capacity(n: usize): !string {
+      let s: string = string.new();
+      errdefer s.free();
+      try s.ensure(n);
+      return s;
+    }
+
+    fn from(view: string_view): !string {
+      let s: string = string.new();
+      errdefer s.free();
+      try s.append(view);
+      return s;
+    }
+
+    fn size(self): usize {
+      return self.bytes.length;
+    }
+
+    fn is_empty(self): bool {
+      return self.bytes.length == 0;
+    }
+
+    fn get(self, i: usize): u8 {
+      return self.as_view().get(i);
+    }
+
+    fn at(self, i: usize): ?u8 {
+      return self.as_view().at(i);
+    }
+
+    fn as_view(self): string_view {
+      return slice<u8>{ data: self.bytes.data, length: self.bytes.length };
+    }
+
+    fn c_str(self): u8* {
+      if (self.bytes.capacity == 0)
+        return "".data;
+
+      return self.bytes.data;
+    }
+
+    fn equals(self, other: string_view): bool {
+      return memory.equal(self.as_view(), other);
+    }
+
+    fn push(self: string*, c: u8): !void {
+      try self.ensure(1);
+      *(self.bytes.data + self.bytes.length) = c;
+      self.bytes.length += 1;
+      *(self.bytes.data + self.bytes.length) = 0;
+    }
+
+    fn append(self: string*, s: string_view): !void {
+      if (s.length == 0)
+        return;
+
+      try self.ensure(s.length);
+
+      let dst: slice<u8> = slice<u8>{ data: self.bytes.data + self.bytes.length, length: s.length };
+      memory.copy<u8>(dst, s);
+      self.bytes.length += s.length;
+      *(self.bytes.data + self.bytes.length) = 0;
+    }
+
+    fn clear(self: string*): void {
+      self.bytes.length = 0;
+      if (self.bytes.capacity > 0)
+        *(self.bytes.data) = 0;
+    }
+
+    fn truncate(self: string*, n: usize): void {
+      if (n >= self.bytes.length)
+        return;
+
+      self.bytes.length = n;
+      *(self.bytes.data + n) = 0;
+    }
+
+    fn free(self: string*): void {
+      self.bytes.free();
+    }
+  }
+}
+
+public {
+  fn equals(a: string_view, b: string_view): bool {
+    return memory.equal(a, b);
+  }
+
+  fn starts_with(s: string_view, prefix: string_view): bool {
+    if (prefix.length > s.length)
+      return false;
+
+    return memory.equal(s.sub(0, prefix.length), prefix);
+  }
+
+  fn ends_with(s: string_view, suffix: string_view): bool {
+    if (suffix.length > s.length)
+      return false;
+
+    return memory.equal(s.sub(s.length - suffix.length, s.length), suffix);
+  }
+
+  fn find_byte(s: string_view, b: u8): ?usize {
+    let i: usize = 0;
+    while (i < s.length) {
+      if (*(s.data + i) == b)
+        return i;
+
+      i += 1;
+    }
+
+    return none;
+  }
+
+  fn find(s: string_view, needle: string_view): ?usize {
+    if (needle.length > s.length)
+      return none;
+
+    let last: usize = s.length - needle.length;
+    let i: usize = 0;
+    while (i <= last) {
+      if (memory.equal(s.sub(i, i + needle.length), needle))
+        return i;
+      i += 1;
+    }
+
+    return none;
+  }
+}

@@ -1,0 +1,43 @@
+@import sys.libc;
+@import core.slice.{ slice };
+
+struct stream {
+  fd: i32;
+}
+
+impl stream {
+  public {
+    fn write_all(self, s: slice<u8>): !void {
+      let written: usize = 0;
+      while (written < s.length) {
+        let n: isize = libc.write(self.fd, s.data + written, s.length - written);
+        if (n <= 0)
+          return error.closed;
+
+        written += (n as usize);
+      }
+    }
+
+    fn read(self, buf: slice<u8>): !usize {
+      let n: isize = libc.read(self.fd, buf.data, buf.length);
+      if (n < 0)
+        return error.closed;
+
+      return n as usize;
+    }
+  }
+}
+
+public {
+  fn stdin(): stream {
+    return stream{ fd: libc.STDIN };
+  }
+
+  fn stdout(): stream {
+    return stream{ fd: libc.STDOUT };
+  }
+
+  fn stderr(): stream {
+    return stream{ fd: libc.STDERR };
+  }
+}
