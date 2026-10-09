@@ -8,6 +8,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <vector>
 
 namespace pit::sema {
@@ -47,6 +48,11 @@ struct def {
   type_id type{type_id::invalid};
   def_id parent{def_id::none};
   std::uint32_t index{0};
+
+  def_id first_child{def_id::none};
+  std::uint32_t child_count{0};
+  def_id first_generic{def_id::none};
+  std::uint32_t generic_count{0};
 };
 
 class def_table {
@@ -77,6 +83,15 @@ public:
   bool valid(def_id id) const {
     const auto i = static_cast<std::size_t>(id);
     return i != 0 && i < _defs.size();
+  }
+
+  std::span<const def> slice(def_id first, std::uint32_t count) const {
+    if (count == 0)
+      return {};
+
+    const auto i = static_cast<std::size_t>(first);
+    assert(i != 0 && i + count <= _defs.size());
+    return {_defs.data() + i, count};
   }
 
   std::size_t size() const { return _defs.size() - 1; }
