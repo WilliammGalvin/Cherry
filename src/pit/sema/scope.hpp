@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <cstddef>
 #include <optional>
 #include <span>
@@ -12,6 +13,7 @@ public:
   void push_frame() { _frames.push_back(_entries.size()); }
 
   void pop_frame() {
+    assert(!_frames.empty());
     _entries.erase(_entries.begin() +
                        static_cast<std::ptrdiff_t>(_frames.back()),
                    _entries.end());
@@ -50,7 +52,7 @@ public:
 
   std::size_t depth() const noexcept { return _stack.depth(); }
 
-  std::optional<Value> declare(const Key &key, const Value &value) noexcept {
+  std::optional<Value> declare(const Key &key, const Value &value) {
     if (auto existing = _find(_stack.current(), key))
       return existing;
 
@@ -76,7 +78,7 @@ private:
 
   static std::optional<Value> _find(std::span<const entry> entries,
                                     const Key &key) {
-    for (std::size_t i = entries.size() - 1; i >= 0; --i) {
+    for (std::size_t i = entries.size(); i-- > 0;) {
       if (entries[i].key == key)
         return entries[i].value;
     }
