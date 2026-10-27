@@ -1,4 +1,5 @@
 #include "pit/parser/parser.hpp"
+#include "pit/ast/node_tag.hpp"
 
 #include <optional>
 #include <sstream>
@@ -11,56 +12,56 @@ using lexer::token_type;
 namespace {
 
 struct binary_op {
-  ast::node_kind kind;
+  ast::node_tag kind;
   int precedence;
 };
 
 constexpr std::optional<binary_op> binary_op_for(token_type type) noexcept {
   switch (type) {
   case token_type::logical_or:
-    return binary_op{ast::node_kind::logical_or, 1};
+    return binary_op{ast::node_tag::logical_or, 1};
   case token_type::logical_and:
-    return binary_op{ast::node_kind::logical_and, 2};
+    return binary_op{ast::node_tag::logical_and, 2};
   case token_type::double_equal:
-    return binary_op{ast::node_kind::eq, 3};
+    return binary_op{ast::node_tag::eq, 3};
   case token_type::bang_equal:
-    return binary_op{ast::node_kind::ne, 3};
+    return binary_op{ast::node_tag::ne, 3};
   case token_type::less:
-    return binary_op{ast::node_kind::lt, 4};
+    return binary_op{ast::node_tag::lt, 4};
   case token_type::less_equal:
-    return binary_op{ast::node_kind::le, 4};
+    return binary_op{ast::node_tag::le, 4};
   case token_type::greater:
-    return binary_op{ast::node_kind::gt, 4};
+    return binary_op{ast::node_tag::gt, 4};
   case token_type::greater_equal:
-    return binary_op{ast::node_kind::ge, 4};
+    return binary_op{ast::node_tag::ge, 4};
   case token_type::plus:
-    return binary_op{ast::node_kind::add, 5};
+    return binary_op{ast::node_tag::add, 5};
   case token_type::minus:
-    return binary_op{ast::node_kind::sub, 5};
+    return binary_op{ast::node_tag::sub, 5};
   case token_type::star:
-    return binary_op{ast::node_kind::mul, 6};
+    return binary_op{ast::node_tag::mul, 6};
   case token_type::slash:
-    return binary_op{ast::node_kind::div, 6};
+    return binary_op{ast::node_tag::div, 6};
   case token_type::percent:
-    return binary_op{ast::node_kind::rem, 6};
+    return binary_op{ast::node_tag::rem, 6};
   default:
     return std::nullopt;
   }
 }
 
-constexpr std::optional<ast::node_kind>
+constexpr std::optional<ast::node_tag>
 compound_assign_op(token_type type) noexcept {
   switch (type) {
   case token_type::plus_equal:
-    return ast::node_kind::add;
+    return ast::node_tag::add;
   case token_type::minus_equal:
-    return ast::node_kind::sub;
+    return ast::node_tag::sub;
   case token_type::star_equal:
-    return ast::node_kind::mul;
+    return ast::node_tag::mul;
   case token_type::slash_equal:
-    return ast::node_kind::div;
+    return ast::node_tag::div;
   case token_type::percent_equal:
-    return ast::node_kind::rem;
+    return ast::node_tag::rem;
   default:
     return std::nullopt;
   }
@@ -177,19 +178,19 @@ ast::node_id parser::parse_fn_decl() {
 
   const auto extra =
       tree_.add_extra(ast::fn_extra{params_start, params_end, return_type});
-  return tree_.add(ast::node_kind::fn_decl, name,
+  return tree_.add(ast::node_tag::fn_decl, name,
                    static_cast<ast::node_id>(extra), body);
 }
 
 ast::node_id parser::parse_param() {
   const auto type = parse_type();
   const auto name = expect(token_type::identifier, "parameter name");
-  return tree_.add(ast::node_kind::param, name, type);
+  return tree_.add(ast::node_tag::param, name, type);
 }
 
 ast::node_id parser::parse_type() {
   const auto name = expect(token_type::identifier, "a type name");
-  return tree_.add(ast::node_kind::type_name, name);
+  return tree_.add(ast::node_tag::type_name, name);
 }
 
 // --- statements -------------------------------------------------------------
@@ -205,7 +206,7 @@ ast::node_id parser::parse_block() {
   const auto [start, end] = tree_.add_range(std::span{scratch_}.subspan(mark));
   scratch_.resize(mark);
 
-  return tree_.add(ast::node_kind::block, brace,
+  return tree_.add(ast::node_tag::block, brace,
                    static_cast<ast::node_id>(start),
                    static_cast<ast::node_id>(end));
 }
@@ -240,12 +241,12 @@ ast::node_id parser::parse_stmt() {
   case token_type::kw_break: {
     const auto tok = advance();
     expect(token_type::semi_colon, "';' after break");
-    return tree_.add(ast::node_kind::break_stmt, tok);
+    return tree_.add(ast::node_tag::break_stmt, tok);
   }
   case token_type::kw_continue: {
     const auto tok = advance();
     expect(token_type::semi_colon, "';' after continue");
-    return tree_.add(ast::node_kind::continue_stmt, tok);
+    return tree_.add(ast::node_tag::continue_stmt, tok);
   }
   default:
     break;
@@ -265,8 +266,8 @@ ast::node_id parser::parse_local_decl() {
   if (match(token_type::equal))
     init = parse_expr();
 
-  return tree_.add(is_const ? ast::node_kind::const_decl
-                            : ast::node_kind::var_decl,
+  return tree_.add(is_const ? ast::node_tag::const_decl
+                            : ast::node_tag::var_decl,
                    name, type, init);
 }
 
@@ -274,9 +275,9 @@ ast::node_id parser::parse_assign_or_expr_stmt() {
   const auto target = parse_expr();
 
   if (!is_assignment(peek_type()))
-    return tree_.add(ast::node_kind::expr_stmt, here(), target);
+    return tree_.add(ast::node_tag::expr_stmt, here(), target);
 
-  if (tree_[target].kind != ast::node_kind::identifier)
+  if (tree_[target].kind != ast::node_tag::identifier)
     fail("left-hand side of assignment is not assignable");
 
   const auto target_token = tree_[target].main_token;
@@ -285,11 +286,11 @@ ast::node_id parser::parse_assign_or_expr_stmt() {
   const auto value = parse_expr();
 
   if (!compound)
-    return tree_.add(ast::node_kind::assign, op, target, value);
+    return tree_.add(ast::node_tag::assign, op, target, value);
 
-  const auto reread = tree_.add(ast::node_kind::identifier, target_token);
+  const auto reread = tree_.add(ast::node_tag::identifier, target_token);
   const auto combined = tree_.add(*compound, op, reread, value);
-  return tree_.add(ast::node_kind::assign, op, target, combined);
+  return tree_.add(ast::node_tag::assign, op, target, combined);
 }
 
 ast::node_id parser::parse_if() {
@@ -298,13 +299,13 @@ ast::node_id parser::parse_if() {
   const auto then_block = parse_block();
 
   if (!match(token_type::kw_else))
-    return tree_.add(ast::node_kind::if_stmt, tok, condition, then_block);
+    return tree_.add(ast::node_tag::if_stmt, tok, condition, then_block);
 
   const auto else_branch =
       check(token_type::kw_if) ? parse_if() : parse_block();
 
   const auto extra = tree_.add_extra(ast::if_extra{then_block, else_branch});
-  return tree_.add(ast::node_kind::if_else, tok, condition,
+  return tree_.add(ast::node_tag::if_else, tok, condition,
                    static_cast<ast::node_id>(extra));
 }
 
@@ -312,7 +313,7 @@ ast::node_id parser::parse_while() {
   const auto tok = expect(token_type::kw_while, "'while'");
   const auto condition = parse_expr();
   const auto body = parse_block();
-  return tree_.add(ast::node_kind::while_stmt, tok, condition, body);
+  return tree_.add(ast::node_tag::while_stmt, tok, condition, body);
 }
 
 ast::node_id parser::parse_return() {
@@ -322,7 +323,7 @@ ast::node_id parser::parse_return() {
   if (!check(token_type::semi_colon))
     value = parse_expr();
 
-  return tree_.add(ast::node_kind::return_stmt, tok, value);
+  return tree_.add(ast::node_tag::return_stmt, tok, value);
 }
 
 // --- expressions ------------------------------------------------------------
@@ -346,12 +347,12 @@ ast::node_id parser::parse_binary(int min_precedence) {
 ast::node_id parser::parse_unary() {
   if (check(token_type::bang)) {
     const auto tok = advance();
-    return tree_.add(ast::node_kind::logical_not, tok, parse_unary());
+    return tree_.add(ast::node_tag::logical_not, tok, parse_unary());
   }
 
   if (check(token_type::minus)) {
     const auto tok = advance();
-    return tree_.add(ast::node_kind::neg, tok, parse_unary());
+    return tree_.add(ast::node_tag::neg, tok, parse_unary());
   }
 
   return parse_postfix();
@@ -380,29 +381,30 @@ ast::node_id parser::parse_call(ast::node_id callee) {
   scratch_.resize(mark);
 
   const auto extra = tree_.add_extra(ast::call_extra{start, end});
-  return tree_.add(ast::node_kind::call, paren, callee,
+  return tree_.add(ast::node_tag::call, paren, callee,
                    static_cast<ast::node_id>(extra));
 }
 
 ast::node_id parser::parse_primary() {
   switch (peek_type()) {
   case token_type::integer_literal:
-    return tree_.add(ast::node_kind::int_literal, advance());
+    return tree_.add(ast::node_tag::int_literal, advance());
   case token_type::float_literal:
-    return tree_.add(ast::node_kind::float_literal, advance());
+    return tree_.add(ast::node_tag::float_literal, advance());
   case token_type::string_literal:
-    return tree_.add(ast::node_kind::string_literal, advance());
+    return tree_.add(ast::node_tag::string_literal, advance());
   case token_type::boolean_literal_true:
   case token_type::boolean_literal_false:
-    return tree_.add(ast::node_kind::bool_literal, advance());
+    return tree_.add(ast::node_tag::bool_literal, advance());
   case token_type::identifier:
-    return tree_.add(ast::node_kind::identifier, advance());
+    return tree_.add(ast::node_tag::identifier, advance());
   case token_type::left_paren: {
     advance();
     const auto inner = parse_expr();
     expect(token_type::right_paren, "')' after expression");
     return inner;
   }
+
   default:
     fail("expected an expression");
   }

@@ -1,35 +1,12 @@
-/// @file lex_error.hpp
-/// @brief Defines the lex_error struct and lex_error_kind enum for representing
-///        lexical errors in the lexer.
 #pragma once
 
-#include <cstdint>
-#include <format>
+#include "common/lexing/lex_error.hpp"
+
 #include <string_view>
-#include <utility>
 
-namespace pit::lexer {
+namespace common::debug::lexing {
 
-/// @brief Represents the different kinds of lexical errors that can occur
-///        during the lexing process.
-enum class lex_error_kind {
-  unterminated_string,
-  unterminated_block_comment,
-  invalid_escape_sequence,
-  unexpected_character,
-};
-
-/// @brief Represents a lexical error that occurred during the lexing process.
-struct lex_error {
-  using position_type =
-      std::uint32_t; ///< Type used for representing the position of the error
-                     ///< in the source code.
-
-  lex_error_kind kind;
-  position_type offset;
-  position_type line;
-  position_type column;
-};
+using namespace common::lexing;
 
 /// @brief Converts a lex_error_kind to its string representation.
 /// @param kind The lex_error_kind to convert.
@@ -59,5 +36,4 @@ inline std::string to_str(const lex_error &err) {
   return std::format("{}:{}: error: {}", err.line, err.column,
                      to_str(err.kind));
 }
-
-} // namespace pit::lexer
+} // namespace common::debug::lexing

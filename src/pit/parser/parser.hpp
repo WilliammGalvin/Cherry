@@ -1,6 +1,6 @@
 #pragma once
 
-#include "pit/ast/ast.hpp"
+#include "pit/ast/tree.hpp"
 #include "pit/lexer/token.hpp"
 
 #include <cstdint>

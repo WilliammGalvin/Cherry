@@ -1,91 +1,22 @@
-/// @file token_type.hpp
-/// @brief Defines the `token_type` enum class, which represents the different
-///        types of tokens that can be produced by the lexer.
 #pragma once
+
+#include "common/lexing/token_type.hpp"
 
 #include <array>
 #include <optional>
 #include <string_view>
 #include <utility>
 
-namespace pit::lexer {
+namespace common::debug::lexing {
 
-/// @brief Represents the different types of tokens that can be produced by the
-///        lexer.
-enum class token_type {
-  // literals
-  identifier,
-  directive,
-  integer_literal,
-  float_literal,
-  string_literal,
-  boolean_literal_true,
-  boolean_literal_false,
+using namespace common::lexing;
 
-  // keywords
-  kw_public,
-  kw_private,
-  kw_const,
-  kw_if,
-  kw_else,
-  kw_while,
-  kw_for,
-  kw_func,
-  kw_return,
-  kw_continue,
-  kw_break,
+using keyword_entry = std::pair<std::string_view,
+                                token_type>; ///< Represents a mapping between a
+                                             ///< keyword string and its
+                                             ///< corresponding token_type.
 
-  // punctuation
-  semi_colon,
-  colon,
-  comma,
-  left_paren,
-  right_paren,
-  left_brace,
-  right_brace,
-  left_bracket,
-  right_bracket,
-  dot,
-
-  // comparison
-  greater,
-  less,
-  greater_equal,
-  less_equal,
-
-  // arithmetic
-  plus,
-  minus,
-  star,
-  slash,
-  percent,
-
-  // assignment
-  equal,
-  plus_equal,
-  minus_equal,
-  star_equal,
-  slash_equal,
-  percent_equal,
-
-  // logical / equality
-  double_equal,
-  bang_equal,
-  logical_or,
-  logical_and,
-  bang,
-
-  // special
-  invalid,
-  eof,
-};
-
-using keyword_entry =
-    std::pair<std::string_view,
-              token_type>; ///< Represents a mapping between a keyword string
-                           ///< and its corresponding token_type.
-
-/// @brief A constexpr array of keyword_entry pairs that maps recognized
+/// @brief Table of keyword_entry pairs that maps recognized
 ///        keywords to their corresponding token_type values.
 inline constexpr std::array keyword_table = {
     keyword_entry{"public", token_type::kw_public},
@@ -228,4 +159,4 @@ constexpr std::string_view token_type_to_str(token_type type) noexcept {
   std::unreachable();
 }
 
-} // namespace pit::lexer
+} // namespace common::debug::lexing

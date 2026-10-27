@@ -4,7 +4,6 @@
 #include "name.hpp"
 
 #include <cstddef>
-#include <cstdint>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
@@ -29,7 +28,7 @@ public:
 
 private:
   arena &_arena;
-  std::unordered_map<std::string_view, std::uint32_t> _map;
+  std::unordered_map<std::string_view, name_id> _map;
   std::vector<std::string_view> _strings;
 };
 

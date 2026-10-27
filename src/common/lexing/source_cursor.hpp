@@ -3,13 +3,12 @@
 ///        navigate through the source code during the lexing process.
 #pragma once
 
+#include "common/lexing/lex_error.hpp"
 #include <concepts>
 #include <cstddef>
 #include <type_traits>
 
-#include "pit/lexer/lex_error.hpp"
-
-namespace pit::lexer {
+namespace common::lexing {
 
 /// @brief The source_cursor class is responsible for navigating through the
 ///        source code during the lexing process.
@@ -179,4 +178,4 @@ private:
   position_type _col{1};
 };
 
-} // namespace pit::lexer
+} // namespace common::lexing
