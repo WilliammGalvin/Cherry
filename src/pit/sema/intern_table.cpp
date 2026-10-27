@@ -1,4 +1,4 @@
-#include "intern_table.hpp"
+#include <pit/sema/intern_table.hpp>
 
 #include <cassert>
 #include <cstddef>

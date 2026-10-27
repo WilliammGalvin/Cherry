@@ -7,8 +7,9 @@
 #include <string_view>
 #include <vector>
 
-#include "common/lexing/lex_error.hpp"
-#include "common/lexing/token.hpp"
+#include <common/lexing/lex_error.hpp>
+#include <common/lexing/source_cursor.hpp>
+#include <common/lexing/token.hpp>
 
 namespace pit::lexer {
 
@@ -30,6 +31,12 @@ public:
   /// @param source The source code to be tokenized.
   explicit lexer(std::string_view source) noexcept : _cursor(source) {}
 
+  lexer(const lexer &) = delete;
+  lexer &operator=(const lexer &) = delete;
+
+  lexer(lexer &&) = delete;
+  lexer &operator=(lexer &&) = delete;
+
   /// @brief Tokenizes the source code and returns a lex_result, which can be
   ///        either a vector of tokens or a lex_error if an error occurs during
   ///        the lexing process.
@@ -37,6 +44,8 @@ public:
   std::expected<std::vector<token>, lex_error> lex();
 
 private:
+  using lex_result = std::expected<token, lex_error>;
+
   source_cursor _cursor;
   std::vector<token> _tokens{};
 

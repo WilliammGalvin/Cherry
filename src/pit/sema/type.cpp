@@ -1,4 +1,4 @@
-#include "type.hpp"
+#include <pit/sema/type.hpp>
 
 #include <algorithm>
 #include <cassert>

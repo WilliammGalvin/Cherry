@@ -1,6 +1,6 @@
-#include "pit/lexer/lexer.hpp"
-#include "pit/lexer/char_class.hpp"
-#include "pit/lexer/token_type.hpp"
+#include <pit/lexer/char_class.hpp>
+#include <pit/lexer/lexer.hpp>
+#include <pit/lexer/token_type.hpp>
 
 #include <unistd.h>
 

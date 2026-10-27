@@ -1,8 +1,8 @@
 #pragma once
 
-#include "context.hpp"
-#include "declare.hpp"
 #include "pit/ast/tree.hpp"
+#include <pit/sema/context.hpp>
+#include <pit/sema/declare.hpp>
 
 #include <optional>
 #include <vector>

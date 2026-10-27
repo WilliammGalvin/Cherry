@@ -1,7 +1,8 @@
 add_subdirectory(lexer)
-add_subdirectory(ast)
 add_subdirectory(parser)
+add_subdirectory(ast)
 add_subdirectory(sema)
+add_subdirectory(codegen)
 
 add_library(pit_compiler INTERFACE)
 add_library(pit::compiler ALIAS pit_compiler)

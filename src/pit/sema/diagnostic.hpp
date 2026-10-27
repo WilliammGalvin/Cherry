@@ -1,8 +1,8 @@
 #pragma once
 
-#include "file_id.hpp"
-#include "pit/ast/node.hpp"
-#include "pit/sema/arena.hpp"
+#include <pit/sema/file_id.hpp>
+#include <pit/sema/pit/ast/node.hpp>
+#include <pit/sema/pit/sema/arena.hpp>
 
 #include <cstddef>
 #include <cstdint>

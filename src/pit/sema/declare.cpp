@@ -1,4 +1,4 @@
-#include "declare.hpp"
+#include <pit/sema/declare.hpp>
 
 namespace pit::sema {
 

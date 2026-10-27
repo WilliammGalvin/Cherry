@@ -4,9 +4,6 @@
 #pragma once
 
 #include <cstdint>
-#include <format>
-#include <string_view>
-#include <utility>
 
 namespace common::lexing {
 

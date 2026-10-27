@@ -1,4 +1,4 @@
-#include "common/lexing/source_manager.hpp"
+#include <common/lexing/source_manager.hpp>
 #include <cstdint>
 
 namespace common::lexing {

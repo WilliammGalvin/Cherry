@@ -1,5 +1,5 @@
-#include "pit/parser/parser.hpp"
-#include "pit/ast/node_tag.hpp"
+#include <pit/ast/node_tag.hpp>
+#include <pit/parser/parser.hpp>
 
 #include <optional>
 #include <sstream>

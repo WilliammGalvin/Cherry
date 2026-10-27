@@ -1,10 +1,10 @@
 #pragma once
 
-#include "context.hpp"
-#include "def.hpp"
-#include "pit/ast/node.hpp"
-#include "scope.hpp"
-#include "type.hpp"
+#include <pit/sema/context.hpp>
+#include <pit/sema/def.hpp>
+#include <pit/sema/pit/ast/node.hpp>
+#include <pit/sema/scope.hpp>
+#include <pit/sema/type.hpp>
 
 #include <span>
 

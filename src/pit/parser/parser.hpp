@@ -1,7 +1,7 @@
 #pragma once
 
-#include "pit/ast/tree.hpp"
-#include "pit/lexer/token.hpp"
+#include <pit/ast/tree.hpp>
+#include <pit/lexer/token.hpp>
 
 #include <cstdint>
 #include <expected>

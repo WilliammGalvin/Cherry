@@ -1,7 +1,6 @@
 #pragma once
 
-#include "common/lexing/source_file.hpp"
-
+#include <common/lexing/source_file.hpp>
 #include <cstdint>
 #include <deque>
 #include <expected>

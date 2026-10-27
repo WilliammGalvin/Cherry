@@ -1,9 +1,9 @@
 #pragma once
 
-#include "context.hpp"
-#include "declare.hpp"
 #include "pit/ast/node.hpp"
 #include "pit/ast/tree.hpp"
+#include <pit/sema/context.hpp>
+#include <pit/sema/declare.hpp>
 
 #include <functional>
 #include <string_view>

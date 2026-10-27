@@ -1,13 +1,11 @@
 #pragma once
 
-#include "node.hpp"
+#include <pit/ast/node.hpp>
 
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
-#include <span>
 #include <type_traits>
-#include <vector>
 
 namespace pit::ast {
 

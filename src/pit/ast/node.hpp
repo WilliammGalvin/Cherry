@@ -1,6 +1,6 @@
 #pragma once
 
-#include "node_tag.hpp"
+#include <pit/ast/node_tag.hpp>
 
 #include <cstdint>
 

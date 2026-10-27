@@ -3,7 +3,7 @@
 ///        navigate through the source code during the lexing process.
 #pragma once
 
-#include "common/lexing/lex_error.hpp"
+#include <common/lexing/lex_error.hpp>
 #include <concepts>
 #include <cstddef>
 #include <type_traits>

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "arena.hpp"
-#include "name.hpp"
+#include <pit/sema/arena.hpp>
+#include <pit/sema/name.hpp>
 
 #include <cstddef>
 #include <string_view>

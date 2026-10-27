@@ -3,12 +3,12 @@
 ///        lexer.
 #pragma once
 
-#include "common/lexing/source_file.hpp"
-#include "token_type.hpp"
-
+#include <common/lexing/source_manager.hpp>
 #include <cstdint>
 
 namespace common::lexing {
+
+using token_type = std::uint8_t;
 
 struct token {
   source_file_id id;

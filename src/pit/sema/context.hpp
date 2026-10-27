@@ -1,11 +1,11 @@
 #pragma once
 
-#include "arena.hpp"
-#include "def.hpp"
-#include "diagnostic.hpp"
-#include "intern_table.hpp"
-#include "name.hpp"
-#include "type.hpp"
+#include <pit/sema/arena.hpp>
+#include <pit/sema/def.hpp>
+#include <pit/sema/diagnostic.hpp>
+#include <pit/sema/intern_table.hpp>
+#include <pit/sema/name.hpp>
+#include <pit/sema/type.hpp>
 
 #include <string>
 #include <unordered_map>

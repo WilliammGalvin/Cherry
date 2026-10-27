@@ -1,6 +1,6 @@
 #pragma once
 
-#include "node.hpp"
+#include <pit/ast/node.hpp>
 
 #include <type_traits>
 

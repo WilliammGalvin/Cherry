@@ -1,9 +1,9 @@
 #pragma once
 
-#include "name.hpp"
 #include "pit/ast/node.hpp"
-#include "pit/sema/file_id.hpp"
-#include "type.hpp"
+#include <pit/sema/file_id.hpp>
+#include <pit/sema/name.hpp>
+#include <pit/sema/type.hpp>
 
 #include <cassert>
 #include <cstddef>

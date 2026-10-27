@@ -1,7 +1,7 @@
 #pragma once
 
-#include "pit/ast/extra.hpp"
-#include "pit/ast/tree.hpp"
+#include <pit/sema/pit/ast/extra.hpp>
+#include <pit/sema/pit/ast/tree.hpp>
 
 namespace pit::sema::layout {
 

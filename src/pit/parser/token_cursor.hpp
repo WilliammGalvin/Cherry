@@ -1,7 +1,7 @@
 #pragma once
 
-#include "pit/lexer/token.hpp"
-#include "pit/lexer/token_type.hpp"
+#include <pit/lexer/token.hpp>
+#include <pit/lexer/token_type.hpp>
 
 #include <cassert>
 #include <cstddef>
