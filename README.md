@@ -1,3 +1,3 @@
 # Cherry
 
-Mono repo for cherry and pit
+Mono repo for Cherry, includes Pit and Orchard.
