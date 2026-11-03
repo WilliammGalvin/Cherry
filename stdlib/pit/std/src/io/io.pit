@@ -1,0 +1,5 @@
+public {
+  @import io.stream.{ stream, stdin, stdout, stderr };
+  @import io.print.{ print, println, eprint, eprintln, print_int, print_uint };
+  @import io.read.{ read_byte, read_line, read_all };
+}

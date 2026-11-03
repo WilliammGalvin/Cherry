@@ -1,0 +1,30 @@
+@import core.error.{ panic };
+
+public {
+  fn min<T>(a: T, b: T): T {
+    if (b < a)
+      return b;
+
+    return a;
+  }
+
+  fn max<T>(a: T, b: T): T {
+    if (b > a)
+      return b;
+
+    return a;
+  }
+  
+  fn clamp<T>(value: T, low: T, high: T): T {
+    if (low > high)
+      panic("clamp: low is greater than high");
+
+    if (value < low)
+      return low;
+
+    if (value > high)
+      return high;
+
+    return value;
+  }
+}

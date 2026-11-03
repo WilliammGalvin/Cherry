@@ -1,0 +1,27 @@
+@import sys.libc;
+
+public {
+  error {
+    out_of_memory,
+    closed,
+    interrupted,
+    end_of_stream,
+    invalid_input,
+  }
+
+  fn panic(msg: u8*): void {
+    write_err("panic: ".data);
+    write_err(msg);
+    write_err("\n".data);
+    libc.abort();
+  }
+
+  fn assert(cond: bool, msg: u8*): void {
+    if (!cond)
+      panic(msg);
+  }
+}
+
+fn write_err(s: u8*): void {
+  libc.write(libc.STDERR, s, libc.strlen(s));
+}

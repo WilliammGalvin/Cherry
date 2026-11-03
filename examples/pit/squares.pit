@@ -1,0 +1,48 @@
+@import std.io;
+@import std.collections;
+@import std.core;
+@import std.text;
+
+fn describe(n: u64): !text.string {
+  let s: text.string = text.string.new();
+  errdefer s.free();
+
+  try s.append("n=");
+  try s.push('0' + (n % 10) as u8);
+  return s;
+}
+
+fn main(): !void {
+  let v: collections.vector<u32> = collections.vector<u32>.new();
+  defer v.free();
+
+  let i: u32 = 1;
+  while (i <= 10) {
+    try v.push(i * i);
+    i += 1;
+  }
+
+  let lo: usize = 0;
+  let hi: usize = v.size() - 1;
+  while (lo < hi) {
+    core.memory.swap(v.data + lo, v.data + hi);
+    lo += 1;
+    hi -= 1;
+  }
+
+  let k: usize = 0;
+  while (k < v.size()) {
+    if (k > 0)
+      try io.print(" ");
+
+    try io.print_uint(v.get(k) as u64);
+    k += 1;
+  }
+  try io.println("");
+
+  let missing: u32 = v.at(100) ?? 0;
+  let label: text.string = try describe(missing as u64 + 7);
+  defer label.free();
+
+  try io.println(label.as_view());
+}

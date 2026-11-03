@@ -1,0 +1,62 @@
+@import core.slice.{ slice };
+@import io.stream.{ stream, stdout, stderr };
+
+fn write_line(out: stream, text: slice<u8>): !void {
+  try out.write_all(text);
+  let nl: u8 = 10;
+  try out.write_all(slice<u8>{ data: &nl, length: 1 });
+}
+
+fn write_uint(out: stream, n: u64): !void {
+  let buf: u8[20];
+  let i: usize = 20;
+  let v: u64 = n;
+
+  while (true) {
+    i -= 1;
+    buf[i] = (48 + (v % 10)) as u8;
+    v /= 10;
+
+    if (v == 0)
+      break;
+  }
+
+  try out.write_all(slice<u8>{ data: &buf[i], length: 20 - i });
+}
+
+fn write_int(out: stream, n: i64): !void {
+  if (n < 0) {
+    let minus: u8 = 45;
+    try out.write_all(slice<u8>{ data: &minus, length: 1});
+    try write_uint(out, (0 as u64) - (n as u64));
+    return;
+  }
+
+  try write_uint(out, n as u64);
+}
+
+public {
+  fn print(s: slice<u8>): !void {
+    try stdout().write_all(s);
+  }
+
+  fn println(s: slice<u8>): !void {
+    try write_line(stdout(), s);
+  }
+
+  fn eprint(s: slice<u8>): !void {
+    try stderr().write_all(s);
+  }
+
+  fn eprintln(s: slice<u8>): !void {
+    try write_line(stderr(), s);
+  }
+
+  fn print_int(n: i64): !void {
+    try write_int(stdout(), n);
+  }
+
+  fn print_uint(n: u64): !void {
+    try write_unit(stdout(), n);
+  }
+}

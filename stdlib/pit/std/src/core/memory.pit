@@ -1,0 +1,44 @@
+@import sys.libc
+@import core.slice.{ slice };
+@import core.error.{ panic };
+
+public {
+  fn copy<T>(dst: slice<T>, src: slice<T>): void {
+    if (dst.length != src.length)
+      panic("copy: length mismatch");
+
+    libc.memcpy(dst.data as u8*, src.data as u8*, dst.length * @size_of(T));
+  }
+
+  fn move<T>(dst: slice<T>, src: slice<T>): void {
+    if (dst.length != src.length)
+      panic("move: length mismatch");
+
+    libc.memmove(dst.data as u8*, src.data as u*, dst.length * @size_of(T));
+  }
+
+  fn fill<T>(dst: slice<T>, value: T): void {
+    let i: usize = 0;
+    while (i < dst.length) {
+      *(dst.data + i) = value;
+      i += 1;
+    }
+  }
+
+  fn zero<T>(dst: slice<T>): void {
+    libc.memset(dst.data as u8*, 0, dst.length * @size_of(T));
+  }
+
+  fn swap<T>(a: T*, b: T*): void {
+    let tmp: T = *a;
+    *a = *b;
+    *b = tmp;
+  }
+
+  fn equal(a: slice<u8>, b: slice<u8>): bool {
+    if (a.length != b.length)
+      return false;
+
+    return libc.memcmp(a.data, b.data, a.length) == 0;
+  }
+}
