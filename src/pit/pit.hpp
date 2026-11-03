@@ -1,0 +1,5 @@
+namespace pit {
+
+void compile();
+
+}

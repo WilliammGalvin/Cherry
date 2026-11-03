@@ -1,4 +1,4 @@
-add_executable(orchard_cli main.cpp)
+add_executable(orchard_cli orchard.cpp)
 set_target_properties(orchard_cli PROPERTIES OUTPUT_NAME orchard)
 
 target_link_libraries(orchard_cli PRIVATE
